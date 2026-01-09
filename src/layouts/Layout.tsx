@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Sidebar from '../components/Sidebar';
 import Topbar from '../components/Topbar';
+import CampaignPopup from '../components/CampaignPopup';
 import { motion } from 'framer-motion';
 
 interface LayoutProps {
@@ -15,6 +16,8 @@ const Layout = ({ children }: LayoutProps) => {
             {/* Background decorations */}
             <div className="fixed top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary/5 blur-[120px] pointer-events-none" />
             <div className="fixed bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-secondary/5 blur-[120px] pointer-events-none" />
+
+            <CampaignPopup />
 
             <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />
 

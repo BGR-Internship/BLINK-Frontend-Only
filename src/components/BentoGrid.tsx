@@ -10,16 +10,17 @@ type Service = {
     description: string;
     icon: string;
     color: string;
+    link?: string;
 };
 
 // Dummy Data
 const DUMMY_SERVICES = [
-    { id: '1', title: 'Internet Access', description: 'WifiX, LAN configurations', icon: 'Wifi', color: 'bg-blue-100 text-blue-600' },
-    { id: '2', title: 'MyClassroom', description: 'Course materials & assignments', icon: 'BookOpen', color: 'bg-emerald-100 text-emerald-600' },
-    { id: '3', title: 'Presence', description: 'Student attendance logs', icon: 'Fingerprint', color: 'bg-indigo-100 text-indigo-600' },
-    { id: '4', title: 'StudentConnect', description: 'Campus social network', icon: 'GraduationCap', color: 'bg-purple-100 text-purple-600' },
-    { id: '5', title: 'Office 365', description: 'Email, Word, Excel, Teams', icon: 'Mail', color: 'bg-sky-100 text-sky-600' },
-    { id: '6', title: 'License Mgr', description: 'Adobe, Matlab software keys', icon: 'ShieldCheck', color: 'bg-orange-100 text-orange-600' },
+    { id: '1', title: 'Carolina', description: 'WifiX, LAN configurations', icon: 'Wifi', color: 'bg-blue-100 text-blue-600', link: 'https://carolina.bgrlogistik.id/' },
+    { id: '2', title: 'Amanda', description: 'Course materials & assignments', icon: 'BookOpen', color: 'bg-emerald-100 text-emerald-600', link: 'https://amanda.bgrlogistik.id/' },
+    { id: '3', title: 'Siska', description: 'Employee attendance logs', icon: 'Fingerprint', color: 'bg-indigo-100 text-indigo-600', link: 'https://siska.bgrlogistik.id/' },
+    { id: '4', title: 'Wina', description: 'Campus social network', icon: 'GraduationCap', color: 'bg-purple-100 text-purple-600', link: 'https://wina.bgrlogistik.id/' },
+    { id: '5', title: 'Monalisa', description: 'Email, Word, Excel, Teams', icon: 'Mail', color: 'bg-sky-100 text-sky-600', link: 'https://monalisa.bgrlogistik.id/' },
+    { id: '6', title: 'Samantha', description: 'Adobe, Matlab software keys', icon: 'ShieldCheck', color: 'bg-orange-100 text-orange-600', link: 'https://helpdesk.bgrlogistik.id/?c=7' },
 ];
 
 const IconMap: Record<string, any> = {
@@ -29,12 +30,16 @@ const IconMap: Record<string, any> = {
 const ServiceCard = ({ service, index }: { service: Service; index: number }) => {
     const Icon = IconMap[service.icon] || FolderKanban;
 
+    const CardComponent = service.link ? motion.a : motion.div;
+    const linkProps = service.link ? { href: service.link, target: '_blank', rel: 'noopener noreferrer' } : {};
+
     return (
-        <motion.div
+        <CardComponent
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
-            className="group relative bg-white rounded-3xl p-6 shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden"
+            {...linkProps}
+            className="group relative bg-white rounded-3xl p-6 shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden block"
         >
             {/* Shimmer Effect */}
             <div className="absolute inset-0 translate-x-[-100%] group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/50 to-transparent z-10 pointer-events-none" />
@@ -48,7 +53,7 @@ const ServiceCard = ({ service, index }: { service: Service; index: number }) =>
                     <p className="text-sm text-slate-500 leading-relaxed">{service.description}</p>
                 </div>
             </div>
-        </motion.div>
+        </CardComponent>
     );
 };
 

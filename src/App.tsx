@@ -1,10 +1,15 @@
+import { Routes, Route } from 'react-router-dom';
 import Layout from './layouts/Layout';
 import Dashboard from './pages/Dashboard';
+import Settings from './pages/Settings';
 
 function App() {
     return (
         <Layout>
-            <Dashboard />
+            <Routes>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/settings" element={<Settings />} />
+            </Routes>
         </Layout>
     );
 }

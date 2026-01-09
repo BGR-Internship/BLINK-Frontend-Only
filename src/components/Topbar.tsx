@@ -32,7 +32,7 @@ const Topbar = () => {
                 <div className="flex items-center gap-3 pl-6 border-l border-slate-200">
                     <div className="text-right hidden sm:block">
                         <p className="text-sm font-bold text-slate-700">Fadhil Zaky</p>
-                        <p className="text-xs text-slate-500">Student ID: 5025201xxx</p>
+                        <p className="text-xs text-slate-500">Employee ID: 50000216</p>
                     </div>
                     <motion.div
                         whileHover={{ scale: 1.05 }}

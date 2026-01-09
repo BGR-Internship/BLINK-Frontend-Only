@@ -8,7 +8,7 @@ const slides = [
         title: "Global Academic Reputation Survey 2026",
         subtitle: "Masa Pengisian THE Global Academic Reputation Survey 2026 telah dimulai!",
         color: "from-blue-600 to-indigo-600",
-        image: "https://www.its.ac.id/wp-content/uploads/2023/12/Banner-WCU-2024.png" // Using a relevant placeholder or just a solid color if image fails
+        image: "https://unsplash.com/photos/a-blurry-red-background-with-a-white-border-2gibGPmduPA" // Using a relevant placeholder or just a solid color if image fails
     },
     {
         id: 2,

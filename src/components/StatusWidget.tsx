@@ -19,7 +19,7 @@ const StatusWidget = () => {
                 </div>
                 <div className="flex-1">
                     <h3 className="font-bold text-slate-800">Fadhil Zaky Budianto</h3>
-                    <p className="text-xs text-slate-500 mb-2">5054231001@student.its.ac.id</p>
+                    <p className="text-xs text-slate-500 mb-2">50000216</p>
                     <button className="text-xs font-medium text-primary hover:text-secondary transition-colors flex items-center gap-1">
                         Account Settings <MoreHorizontal size={14} />
                     </button>
@@ -48,7 +48,7 @@ const StatusWidget = () => {
                     </div>
                     <div className="pl-4 border-l-2 border-primary py-1 bg-primary/5 rounded-r-lg">
                         <p className="text-xs font-semibold text-primary uppercase tracking-wider mb-1">Today</p>
-                        <p className="text-sm font-medium text-slate-800">Out of Class Period</p>
+                        <p className="text-sm font-medium text-slate-800">Out of Work Period</p>
                         <p className="text-xs text-slate-500 mt-1">Enjoy your holiday!</p>
                     </div>
                 </div>
