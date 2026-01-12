@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, RefreshCw } from 'lucide-react';
 import logo from '../assets/BGR_logo.png';
@@ -6,17 +6,55 @@ import logo from '../assets/BGR_logo.png';
 const Login = () => {
     const navigate = useNavigate();
     const [showPassword, setShowPassword] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [errorMsg, setErrorMsg] = useState("");
+
     const [formData, setFormData] = useState({
         nik: '',
         password: '',
         captcha: ''
     });
 
-    const handleLogin = (e: React.FormEvent) => {
+    // UX FIX: Check if user is already logged in
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            // If token exists, kick them back to Dashboard immediately
+            navigate('/', { replace: true });
+        }
+    }, [navigate]);
+
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        // Mock Login
-        if (formData.nik && formData.password) {
-            navigate('/');
+        setIsLoading(true);
+        setErrorMsg("");
+
+        try {
+            const response = await fetch('http://localhost:3001/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    nik: formData.nik,
+                    password: formData.password
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('user', JSON.stringify(data.user));
+                navigate('/');
+            } else {
+                setErrorMsg(data.message || "Login failed");
+            }
+        } catch (error) {
+            console.error("Connection Error:", error);
+            setErrorMsg("Cannot connect to the server. Is backend running?");
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -30,6 +68,13 @@ const Login = () => {
                     SISKA <span className="mx-2">|</span> PT. BGR Logistik Indonesia
                 </h1>
             </div>
+
+            {/* Error Message Display */}
+            {errorMsg && (
+                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative text-center text-sm">
+                    {errorMsg}
+                </div>
+            )}
 
             {/* Form */}
             <form onSubmit={handleLogin} className="space-y-6">
@@ -74,16 +119,12 @@ const Login = () => {
                             value={formData.captcha}
                             onChange={(e) => setFormData({ ...formData, captcha: e.target.value })}
                             className="flex-1 px-4 py-3 rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-primary/50 focus:border-primary placeholder:text-slate-400 text-slate-700"
-                            required
                         />
-
-                        {/* Mock Captcha Image */}
                         <div className="h-12 bg-slate-100 border border-slate-200 rounded px-4 flex items-center justify-center relative overflow-hidden w-32 select-none">
                             <div className="absolute inset-0 opacity-20 bg-[repeating-linear-gradient(45deg,transparent,transparent_5px,#000_5px,#000_6px)]" />
                             <div className="absolute inset-0 opacity-20 bg-[repeating-linear-gradient(-45deg,transparent,transparent_5px,#000_5px,#000_6px)]" />
                             <span className="font-mono text-2xl font-bold tracking-widest text-slate-600 rotate-3 transform skew-x-6">AXVSU</span>
                         </div>
-
                         <button type="button" className="text-slate-800 hover:text-primary transition-colors">
                             <RefreshCw size={24} strokeWidth={2.5} />
                         </button>
@@ -95,11 +136,13 @@ const Login = () => {
                 <div className="pt-2 space-y-6 text-center">
                     <button
                         type="submit"
-                        className="w-full py-3 px-4 bg-cyan-400 hover:bg-cyan-500 text-white font-medium rounded-full shadow-lg shadow-cyan-400/30 transition-all duration-300 transform hover:-translate-y-0.5"
+                        disabled={isLoading}
+                        className={`w-full py-3 px-4 text-white font-medium rounded-full shadow-lg transition-all duration-300 transform 
+                            ${isLoading ? 'bg-slate-400 cursor-not-allowed' : 'bg-cyan-400 hover:bg-cyan-500 hover:-translate-y-0.5 shadow-cyan-400/30'}
+                        `}
                     >
-                        Login
+                        {isLoading ? 'Loading...' : 'Login'}
                     </button>
-
                     <div className="text-center">
                         <a href="#" className="font-medium text-slate-600 hover:text-primary transition-colors">
                             Lupa Password / Akun Terblokir ?
@@ -112,7 +155,6 @@ const Login = () => {
             <div className="border-t border-slate-100 pt-6 text-center text-sm text-slate-500">
                 <p>&copy; 2026 Powered By <span className="font-bold text-teal-600">BGR Access</span>. All rights reserved.</p>
             </div>
-
         </div>
     );
 };
