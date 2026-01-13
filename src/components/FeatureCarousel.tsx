@@ -21,7 +21,7 @@ const FeatureCarousel = () => {
             title: "Welcome to New Semester 2026",
             subtitle: "Check your new schedule and academic status.",
             color: "from-primary to-emerald-500",
-            image: "https://picsum.photos/seed/students/1200/600"
+            image: ""
         },
         {
             id: 3,

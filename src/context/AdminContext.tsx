@@ -1,12 +1,13 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
+import defaultBanner from '../assets/banner.jpg';
 
 // Types
 export interface SiteConfig {
     bannerTitle: string;
     bannerSubtitle: string;
     bannerImage: string; // URL or path
+    popupImages: string[]; // List of banner URLs for the popup slider
     popupTitle: string;
-    popupContent: string;
     popupActive: boolean;
 }
 
@@ -32,8 +33,10 @@ const defaultSiteConfig: SiteConfig = {
     bannerTitle: "Net Zero Emissions 2060",
     bannerSubtitle: "Challenge yourself to take action for a cleaner future.",
     bannerImage: "https://picsum.photos/seed/business/1200/600",
-    popupTitle: "Clean Desk Policy Campaign",
-    popupContent: "Unless you are in a meeting, lock your computer screen when leaving your desk. Secure sensitive documents in locked drawers. Clear your workspace of confidential materials at the end of the day.",
+    popupImages: [
+        defaultBanner
+    ],
+    popupTitle: "Important Announcement",
     popupActive: true,
 };
 

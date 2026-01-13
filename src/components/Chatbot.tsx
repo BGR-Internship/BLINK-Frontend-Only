@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageCircle, X, Send, Bot, Maximize2, Minimize2 } from 'lucide-react';
+import { X, Send, Maximize2, Minimize2 } from 'lucide-react';
 import clsx from 'clsx';
+import BilaLogo from '../assets/BILA AI 1.png';
 
 interface Message {
     id: string;
@@ -68,14 +69,22 @@ const Chatbot = () => {
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={() => setIsOpen(!isOpen)}
-                className="fixed bottom-6 right-6 z-50 p-4 bg-gradient-to-r from-primary to-secondary text-white rounded-full shadow-lg shadow-primary/30 flex items-center justify-center transition-all"
+                className="fixed bottom-6 right-6 z-50 p-0 bg-transparent rounded-full shadow-lg shadow-primary/30 flex items-center justify-center transition-all overflow-hidden border-2 border-white"
             >
-                {isOpen ? <X size={28} /> : (
-                    <div className="relative">
-                        <MessageCircle size={28} />
-                        <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
+                {isOpen ? (
+                    <div className="w-14 h-14 bg-gradient-to-r from-primary to-secondary flex items-center justify-center rounded-full">
+                        <X size={28} className="text-white" />
+                    </div>
+                ) : (
+                    <div className="relative w-16 h-16">
+                        <img
+                            src={BilaLogo}
+                            alt="Bila AI"
+                            className="w-full h-full object-cover"
+                        />
+                        <span className="absolute top-0 right-0 flex h-4 w-4">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-4 w-4 bg-emerald-500 border-2 border-white"></span>
                         </span>
                     </div>
                 )}
@@ -103,8 +112,12 @@ const Chatbot = () => {
                         {/* Header */}
                         <div className="bg-gradient-to-r from-primary to-secondary p-4 flex items-center justify-between text-white cursor-pointer" onClick={() => setIsMaximized(!isMaximized)}>
                             <div className="flex items-center gap-3">
-                                <div className="bg-white/20 p-2 rounded-full backdrop-blur-sm">
-                                    <Bot size={24} />
+                                <div className="bg-white/20 p-1 rounded-full backdrop-blur-sm">
+                                    <img
+                                        src={BilaLogo}
+                                        alt="Bila AI"
+                                        className="w-10 h-10 rounded-full object-cover"
+                                    />
                                 </div>
                                 <div>
                                     <h3 className="font-bold">Bila</h3>

@@ -102,7 +102,7 @@ const Login = () => {
                     />
                 </div>
 
-                <div className="space-y-1 relative">
+                <div className="relative">
                     <input
                         type={showPassword ? "text" : "password"}
                         placeholder="Password"

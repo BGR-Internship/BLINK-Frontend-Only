@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Wifi, BookOpen, Clock, Fingerprint, FolderKanban, ShieldCheck, Mail, GraduationCap, Search } from 'lucide-react';
+import { Wifi, BookOpen, Clock, Fingerprint, FolderKanban, Mail, GraduationCap, Search, Truck, Users, CreditCard, Key, Container } from 'lucide-react';
 import clsx from 'clsx';
 
 // Type definition simulating backend response
@@ -15,16 +15,16 @@ type Service = {
 
 // Dummy Data
 const DUMMY_SERVICES = [
-    { id: '1', title: 'Carolina', description: 'WifiX, LAN configurations', icon: 'Wifi', color: 'bg-blue-100 text-blue-600', link: 'https://carolina.bgrlogistik.id/' },
-    { id: '2', title: 'Amanda', description: 'Course materials & assignments', icon: 'BookOpen', color: 'bg-emerald-100 text-emerald-600', link: 'https://amanda.bgrlogistik.id/' },
-    { id: '3', title: 'Siska', description: 'Employee attendance logs', icon: 'Fingerprint', color: 'bg-indigo-100 text-indigo-600', link: 'https://siska.bgrlogistik.id/' },
-    { id: '4', title: 'Wina', description: 'Campus social network', icon: 'GraduationCap', color: 'bg-purple-100 text-purple-600', link: 'https://wina.bgrlogistik.id/' },
-    { id: '5', title: 'Monalisa', description: 'Email, Word, Excel, Teams', icon: 'Mail', color: 'bg-sky-100 text-sky-600', link: 'https://monalisa.bgrlogistik.id/' },
-    { id: '6', title: 'Samantha', description: 'Adobe, Matlab software keys', icon: 'ShieldCheck', color: 'bg-orange-100 text-orange-600', link: 'https://helpdesk.bgrlogistik.id/?c=7' },
+    { id: '1', title: 'VINA', description: 'Visitor integrated and administration', icon: 'Truck', color: 'bg-blue-100 text-blue-600', link: 'https://carolina.bgrlogistik.id/' },
+    { id: '2', title: 'RAISA', description: 'Recruitment Internal Assessment Application', icon: 'Users', color: 'bg-emerald-100 text-emerald-600', link: 'https://amanda.bgrlogistik.id/' },
+    { id: '3', title: 'SISKA', description: 'Sistem Informasi Kepegawaian', icon: 'Fingerprint', color: 'bg-indigo-100 text-indigo-600', link: 'https://siska.bgrlogistik.id/' },
+    { id: '4', title: 'MADONA', description: 'Manajemen Dokumen Pembayaran Nasional ', icon: 'CreditCard', color: 'bg-purple-100 text-purple-600', link: 'https://wina.bgrlogistik.id/' },
+    { id: '5', title: 'MONALISA', description: 'Monitoring, Asset, Lisense Application', icon: 'Key', color: 'bg-sky-100 text-sky-600', link: 'https://monalisa.bgrlogistik.id/' },
+    { id: '6', title: 'DENADA', description: 'Depo Manajemen dan Agency', icon: 'Container', color: 'bg-orange-100 text-orange-600', link: 'https://helpdesk.bgrlogistik.id/?c=7' },
 ];
 
 const IconMap: Record<string, any> = {
-    Wifi, BookOpen, Clock, Fingerprint, FolderKanban, ShieldCheck, Mail, GraduationCap
+    Wifi, BookOpen, Clock, Fingerprint, FolderKanban, Mail, GraduationCap, Truck, Users, CreditCard, Key, Container
 };
 
 const ServiceCard = ({ service, index }: { service: Service; index: number }) => {
