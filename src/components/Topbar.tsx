@@ -1,4 +1,4 @@
-import { Search, Menu, LogOut, Settings, User } from 'lucide-react';
+import { Menu, LogOut, Settings, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -64,15 +64,7 @@ const Topbar = ({ onMenuClick }: TopbarProps) => {
                 <Menu size={24} />
             </button>
 
-            {/* Search Bar */}
-            <div className="w-96 relative hidden md:block">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                <input
-                    type="text"
-                    placeholder="Search for services, news..."
-                    className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-white/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm placeholder:text-slate-400 text-slate-700 dark:text-slate-200 transition-all"
-                />
-            </div>
+            {/* Search Bar Removed from here */}
 
             <div className="flex items-center gap-6 ml-auto">
                 {/* User Profile */}

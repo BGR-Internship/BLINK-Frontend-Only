@@ -31,7 +31,7 @@ interface AdminContextType {
 const defaultSiteConfig: SiteConfig = {
     bannerTitle: "Net Zero Emissions 2060",
     bannerSubtitle: "Challenge yourself to take action for a cleaner future.",
-    bannerImage: "https://images.unsplash.com/photo-1497435334941-8c899ee7e8e9?q=80&w=2574&auto=format&fit=crop",
+    bannerImage: "https://picsum.photos/seed/business/1200/600",
     popupTitle: "Clean Desk Policy Campaign",
     popupContent: "Unless you are in a meeting, lock your computer screen when leaving your desk. Secure sensitive documents in locked drawers. Clear your workspace of confidential materials at the end of the day.",
     popupActive: true,

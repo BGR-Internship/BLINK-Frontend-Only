@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Wifi, BookOpen, Clock, Fingerprint, FolderKanban, ShieldCheck, Mail, GraduationCap } from 'lucide-react';
+import { Wifi, BookOpen, Clock, Fingerprint, FolderKanban, ShieldCheck, Mail, GraduationCap, Search } from 'lucide-react';
 import clsx from 'clsx';
 
 // Type definition simulating backend response
@@ -71,9 +71,20 @@ const BentoGrid = () => {
 
     return (
         <div className="py-2">
-            <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-slate-800 dark:text-white">Applications & Services</h2>
-                <button className="text-sm font-medium text-primary hover:text-secondary transition-colors">View All</button>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                <div>
+                    <h2 className="text-xl font-bold text-slate-800 dark:text-white">Applications & Services</h2>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Quick access to company systems</p>
+                </div>
+
+                <div className="relative w-full md:w-72">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input
+                        type="text"
+                        placeholder="Search services..."
+                        className="w-full pl-10 pr-4 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm placeholder:text-slate-400 text-slate-700 dark:text-slate-200 transition-all shadow-sm"
+                    />
+                </div>
             </div>
 
             {loading ? (

@@ -21,14 +21,14 @@ const FeatureCarousel = () => {
             title: "Welcome to New Semester 2026",
             subtitle: "Check your new schedule and academic status.",
             color: "from-primary to-emerald-500",
-            image: ""
+            image: "https://picsum.photos/seed/students/1200/600"
         },
         {
             id: 3,
             title: "Library Services Update",
             subtitle: "New digital collection available 24/7.",
             color: "from-orange-500 to-red-500",
-            image: ""
+            image: "https://images.unsplash.com/photo-1507842217343-583bb7270b66?q=80&w=2690&auto=format&fit=crop"
         }
     ];
 
@@ -54,9 +54,21 @@ const FeatureCarousel = () => {
                         transition={{ duration: 0.6, ease: "easeOut" }}
                         className={`w-full h-full rounded-2xl md:rounded-3xl overflow-hidden shadow-xl bg-gradient-to-br ${slides[current].color} relative`}
                     >
+                        {/* Background Image if available */}
+                        {slides[current].image && (
+                            <div className="absolute inset-0 z-0">
+                                <img
+                                    src={slides[current].image}
+                                    alt={slides[current].title}
+                                    className="w-full h-full object-cover opacity-40 mix-blend-overlay"
+                                />
+                                <div className="absolute inset-0 bg-black/20" />
+                            </div>
+                        )}
+
                         {/* Abstract Shapes overlay */}
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2"></div>
-                        <div className="absolute bottom-0 left-0 w-64 h-64 bg-black/10 rounded-full blur-3xl transform -translate-x-1/2 translate-y-1/2"></div>
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2 z-0"></div>
+                        <div className="absolute bottom-0 left-0 w-64 h-64 bg-black/10 rounded-full blur-3xl transform -translate-x-1/2 translate-y-1/2 z-0"></div>
 
                         <div className="absolute inset-0 flex flex-col justify-center px-10 md:px-20 text-white z-10">
                             <motion.h2
