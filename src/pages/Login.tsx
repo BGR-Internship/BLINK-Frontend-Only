@@ -60,10 +60,10 @@ const Login = () => {
     const handleDevBypass = () => {
         // 1. Set a FAKE token so the Router lets him in
         localStorage.setItem('token', 'dev-bypass-token-123');
-        
+
         // 2. Set FAKE user data so the Topbar doesn't crash
         localStorage.setItem('user', JSON.stringify({
-            id: 'DEV', 
+            id: 'DEV',
             nik: 'FRONTEND-USER'
         }));
 

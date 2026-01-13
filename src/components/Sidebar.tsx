@@ -34,7 +34,7 @@ const Sidebar = ({ collapsed, setCollapsed, mobileOpen = false, setMobileOpen }:
         // 1. Remove the security keys
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-        
+
         // 2. Redirect to Login Page
         navigate('/login');
     };
@@ -68,12 +68,12 @@ const Sidebar = ({ collapsed, setCollapsed, mobileOpen = false, setMobileOpen }:
                     width: collapsed ? 80 : 280,
                 }}
                 className={clsx(
-                    "h-screen bg-white shadow-xl z-50 flex flex-col fixed left-0 top-0 border-r border-slate-100 transition-transform duration-300",
+                    "h-screen bg-white dark:bg-slate-900 shadow-xl z-50 flex flex-col fixed left-0 top-0 border-r border-slate-100 dark:border-slate-800 transition-transform duration-300",
                     mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
                 )}
             >
                 {/* Header / Logo */}
-                <div className="h-20 flex items-center justify-between px-6 border-b border-slate-50">
+                <div className="h-20 flex items-center justify-between px-6 border-b border-slate-50 dark:border-slate-800">
                     {!collapsed && (
                         <motion.img
                             initial={{ opacity: 0 }}
@@ -85,7 +85,7 @@ const Sidebar = ({ collapsed, setCollapsed, mobileOpen = false, setMobileOpen }:
                     )}
                     <button
                         onClick={() => setCollapsed(!collapsed)}
-                        className="hidden md:block p-2 rounded-full hover:bg-slate-50 text-slate-400 hover:text-primary transition-colors ml-auto"
+                        className="hidden md:block p-2 rounded-full hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-400 hover:text-primary transition-colors ml-auto"
                     >
                         {collapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
                     </button>
@@ -93,7 +93,7 @@ const Sidebar = ({ collapsed, setCollapsed, mobileOpen = false, setMobileOpen }:
                     {/* Mobile Close Button */}
                     <button
                         onClick={() => setMobileOpen?.(false)}
-                        className="md:hidden p-2 rounded-full hover:bg-slate-50 text-slate-400 hover:text-primary transition-colors ml-auto"
+                        className="md:hidden p-2 rounded-full hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-400 hover:text-primary transition-colors ml-auto"
                     >
                         <ChevronLeft size={24} />
                     </button>
@@ -111,7 +111,7 @@ const Sidebar = ({ collapsed, setCollapsed, mobileOpen = false, setMobileOpen }:
                                     "w-full flex items-center p-3 rounded-2xl transition-all duration-300 group hover:shadow-lg",
                                     isActive
                                         ? "bg-primary text-white shadow-md shadow-primary/20"
-                                        : "text-slate-500 hover:bg-white hover:text-primary"
+                                        : "text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 hover:text-primary dark:hover:text-primary"
                                 )}
                             >
                                 <item.icon size={22} strokeWidth={isActive ? 2.5 : 2} />
@@ -142,11 +142,11 @@ const Sidebar = ({ collapsed, setCollapsed, mobileOpen = false, setMobileOpen }:
                 </div>
 
                 {/* Footer - LOGOUT IS HERE */}
-                <div className="p-4 border-t border-slate-50">
+                <div className="p-4 border-t border-slate-50 dark:border-slate-800">
                     <button
                         onClick={handleLogout}
                         className={clsx(
-                            "w-full flex items-center p-3 rounded-2xl text-slate-400 hover:bg-slate-50 hover:text-secondary transition-colors",
+                            "w-full flex items-center p-3 rounded-2xl text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-secondary transition-colors",
                             collapsed ? "justify-center" : ""
                         )}
                     >

@@ -25,10 +25,10 @@ const Layout = ({ children, variant = 'dashboard' }: LayoutProps) => {
     // Auth Layout
     if (variant === 'auth') {
         return (
-            <div className="min-h-screen bg-slate-50/50 relative overflow-hidden flex items-center justify-center p-4">
+            <div className="min-h-screen bg-slate-50/50 dark:bg-slate-900 relative overflow-hidden flex items-center justify-center p-4 transition-colors duration-300">
                 {/* Background decorations */}
-                <div className="fixed top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary/5 blur-[120px] pointer-events-none" />
-                <div className="fixed bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-secondary/5 blur-[120px] pointer-events-none" />
+                <div className="fixed top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary/5 dark:bg-primary/20 blur-[120px] pointer-events-none" />
+                <div className="fixed bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-secondary/5 dark:bg-secondary/10 blur-[120px] pointer-events-none" />
 
                 <div className="w-full max-w-md relative z-10">
                     {children}
@@ -38,10 +38,10 @@ const Layout = ({ children, variant = 'dashboard' }: LayoutProps) => {
     }
 
     return (
-        <div className="min-h-screen bg-slate-50/50 relative overflow-x-hidden">
+        <div className="min-h-screen bg-slate-50/50 dark:bg-slate-900 relative overflow-x-hidden transition-colors duration-300">
             {/* Background decorations */}
-            <div className="fixed top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary/5 blur-[120px] pointer-events-none" />
-            <div className="fixed bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-secondary/5 blur-[120px] pointer-events-none" />
+            <div className="fixed top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary/5 dark:bg-primary/20 blur-[120px] pointer-events-none transition-colors duration-300" />
+            <div className="fixed bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-secondary/5 dark:bg-secondary/10 blur-[120px] pointer-events-none transition-colors duration-300" />
 
             <CampaignPopup />
 

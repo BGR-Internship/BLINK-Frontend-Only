@@ -39,18 +39,18 @@ const ServiceCard = ({ service, index }: { service: Service; index: number }) =>
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
             {...linkProps}
-            className="group relative bg-white rounded-3xl p-4 md:p-6 shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden block"
+            className="group relative bg-white dark:bg-slate-800 rounded-3xl p-4 md:p-6 shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden block"
         >
             {/* Shimmer Effect */}
-            <div className="absolute inset-0 translate-x-[-100%] group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/50 to-transparent z-10 pointer-events-none" />
+            <div className="absolute inset-0 translate-x-[-100%] group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/50 dark:via-white/10 to-transparent z-10 pointer-events-none" />
 
             <div className="flex flex-col items-center text-center space-y-4 relative z-0">
                 <div className={clsx("w-14 h-14 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110", service.color)}>
                     <Icon size={28} />
                 </div>
                 <div>
-                    <h3 className="font-bold text-slate-800 mb-1 group-hover:text-primary transition-colors">{service.title}</h3>
-                    <p className="text-sm text-slate-500 leading-relaxed">{service.description}</p>
+                    <h3 className="font-bold text-slate-800 dark:text-white mb-1 group-hover:text-primary transition-colors">{service.title}</h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">{service.description}</p>
                 </div>
             </div>
         </CardComponent>
@@ -72,14 +72,14 @@ const BentoGrid = () => {
     return (
         <div className="py-2">
             <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-slate-800">Applications & Services</h2>
+                <h2 className="text-xl font-bold text-slate-800 dark:text-white">Applications & Services</h2>
                 <button className="text-sm font-medium text-primary hover:text-secondary transition-colors">View All</button>
             </div>
 
             {loading ? (
                 <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
                     {[1, 2, 3, 4].map(i => (
-                        <div key={i} className="h-48 bg-white/60 rounded-3xl animate-pulse" />
+                        <div key={i} className="h-48 bg-white/60 dark:bg-slate-800/60 rounded-3xl animate-pulse" />
                     ))}
                 </div>
             ) : (
