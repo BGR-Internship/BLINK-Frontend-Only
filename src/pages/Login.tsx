@@ -77,8 +77,8 @@ const Login = () => {
             {/* Header / Logo */}
             <div className="flex flex-col items-center text-center space-y-6">
                 <img src={logo} alt="BGR Logistik Indonesia" className="h-12 w-auto object-contain" />
-                <h1 className="text-xl md:text-2xl font-normal text-slate-800">
-                    SISKA <span className="mx-2">|</span> PT. BGR Logistik Indonesia
+                <h1 className="text-xl md:text-2xl font-bold text-slate-800">
+                    BLINK <span className="mx-2">|</span> PT. BGR Logistik Indonesia
                 </h1>
             </div>
 
