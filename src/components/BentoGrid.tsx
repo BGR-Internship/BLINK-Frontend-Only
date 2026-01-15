@@ -14,14 +14,8 @@ type Service = {
 };
 
 // Dummy Data
-const DUMMY_SERVICES = [
-    { id: '1', title: 'VINA', description: 'Visitor integrated and administration', icon: 'Truck', color: 'bg-blue-100 text-blue-600', link: 'https://carolina.bgrlogistik.id/' },
-    { id: '2', title: 'RAISA', description: 'Recruitment Internal Assessment Application', icon: 'Users', color: 'bg-emerald-100 text-emerald-600', link: 'https://amanda.bgrlogistik.id/' },
-    { id: '3', title: 'SISKA', description: 'Sistem Informasi Kepegawaian', icon: 'Fingerprint', color: 'bg-indigo-100 text-indigo-600', link: 'https://siska.bgrlogistik.id/' },
-    { id: '4', title: 'MADONA', description: 'Manajemen Dokumen Pembayaran Nasional ', icon: 'CreditCard', color: 'bg-purple-100 text-purple-600', link: 'https://wina.bgrlogistik.id/' },
-    { id: '5', title: 'MONALISA', description: 'Monitoring, Asset, Lisense Application', icon: 'Key', color: 'bg-sky-100 text-sky-600', link: 'https://monalisa.bgrlogistik.id/' },
-    { id: '6', title: 'DENADA', description: 'Depo Manajemen dan Agency', icon: 'Container', color: 'bg-orange-100 text-orange-600', link: 'https://helpdesk.bgrlogistik.id/?c=7' },
-];
+// Dummy Data removed - fetching from API
+
 
 const IconMap: Record<string, any> = {
     Wifi, BookOpen, Clock, Fingerprint, FolderKanban, Mail, GraduationCap, Truck, Users, CreditCard, Key, Container
@@ -62,11 +56,21 @@ const BentoGrid = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Simulating API Call
-        setTimeout(() => {
-            setServices(DUMMY_SERVICES);
-            setLoading(false);
-        }, 800);
+        const fetchServices = async () => {
+            try {
+                const res = await fetch('/api/services');
+                if (!res.ok) throw new Error('Failed to fetch services');
+                const data = await res.json();
+                setServices(data);
+            } catch (error) {
+                console.error("Error fetching services:", error);
+                // Fallback to empty or could show error state
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchServices();
     }, []);
 
     return (
@@ -95,9 +99,17 @@ const BentoGrid = () => {
                 </div>
             ) : (
                 <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
-                    {services.map((service, idx) => (
-                        <ServiceCard key={service.id} service={service} index={idx} />
-                    ))}
+                    {services.length > 0 ? (
+                        services.map((service, idx) => (
+                            <ServiceCard key={service.id} service={service} index={idx} />
+                        ))
+                    ) : (
+                        <div className="col-span-full py-12 text-center text-slate-400">
+                            <FolderKanban size={48} className="mx-auto mb-4 opacity-50" />
+                            <p>Tidak ada layanan ditemukan.</p>
+                            <p className="text-xs mt-2">Pastikan database terhubung.</p>
+                        </div>
+                    )}
                 </div>
             )}
         </div>

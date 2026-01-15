@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import defaultBanner from '../assets/banner.jpg';
 
 // Types
@@ -52,9 +52,45 @@ const AdminContext = createContext<AdminContextType | undefined>(undefined);
 export const AdminProvider = ({ children }: { children: ReactNode }) => {
     const [siteConfig, setSiteConfig] = useState<SiteConfig>(defaultSiteConfig);
     const [documents, setDocuments] = useState<Document[]>(initialDocuments);
+    const [isLoading, setIsLoading] = useState(true);
 
-    const updateSiteConfig = (newConfig: Partial<SiteConfig>) => {
+    // Fetch config on load
+    useEffect(() => {
+        const fetchConfig = async () => {
+            try {
+                const res = await fetch('/api/config');
+                if (res.ok) {
+                    const data = await res.json();
+                    // Merge with default to ensure all keys exist
+                    setSiteConfig(prev => ({
+                        ...prev,
+                        ...data,
+                        popupImages: data.popupImages || prev.popupImages
+                    }));
+                }
+            } catch (error) {
+                console.error("Failed to load site config:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchConfig();
+    }, []);
+
+    const updateSiteConfig = async (newConfig: Partial<SiteConfig>) => {
+        // Optimistic update
         setSiteConfig(prev => ({ ...prev, ...newConfig }));
+
+        try {
+            await fetch('/api/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newConfig)
+            });
+        } catch (error) {
+            console.error("Failed to save config:", error);
+            // Revert on error? For now, we keep it simple.
+        }
     };
 
     const addDocument = (doc: Omit<Document, 'id' | 'date'>) => {
@@ -63,6 +99,7 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
             id: Math.random().toString(36).substr(2, 9),
             date: new Date().toISOString().split('T')[0]
         };
+
         setDocuments(prev => [...prev, newDoc]);
     };
 

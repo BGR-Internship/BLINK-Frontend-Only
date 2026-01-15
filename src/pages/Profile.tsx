@@ -4,39 +4,79 @@ import { User, Mail, Briefcase, Calendar, MapPin, Camera, Save } from 'lucide-re
 
 const Profile = () => {
     const [isEditing, setIsEditing] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
     const [userData, setUserData] = useState({
-        id: 'Demo User',
-        nik: '12345678',
-        email: 'demo@bgrlogistics.id',
-        role: 'Frontend Developer',
-        division: 'IT Development',
-        joinDate: 'Jan 2023',
-        location: 'Jakarta HQ',
-        bio: 'Passionate about building beautiful and functional user interfaces.'
+        id: '',
+        nik: '',
+        email: '',
+        role: '',
+        division: '',
+        joinDate: '',
+        location: '',
+        bio: ''
     });
 
     useEffect(() => {
-        const stored = localStorage.getItem('user');
-        if (stored) {
+        const fetchUser = async () => {
             try {
-                const parsed = JSON.parse(stored);
-                setUserData(prev => ({
-                    ...prev,
-                    id: parsed.id || prev.id,
-                    nik: parsed.nik || prev.nik
-                }));
-            } catch (e) {
-                console.error(e);
+                const res = await fetch('/api/user');
+                if (res.ok) {
+                    const data = await res.json();
+                    // Map DB snake_case columns to component camelCase if needed, 
+                    // or ideally ensure API returns matching keys. 
+                    // Assuming API implementation in api/user.ts returns raw rows which match keys or we map them here.
+                    // Based on our schema: full_name -> id(name), nik->nik, email->email, role->role, division->division, join_date->joinDate, location->location, bio->bio
+                    // Let's assume strict mapping for now or fallback.
+                    setUserData({
+                        id: data.full_name || 'User',
+                        nik: data.nik || '',
+                        email: data.email || '',
+                        role: data.role || '',
+                        division: data.division || '',
+                        joinDate: data.join_date || '', // Note: schema has join_date
+                        location: data.location || '',
+                        bio: data.bio || ''
+                    });
+                }
+            } catch (error) {
+                console.error("Failed to fetch user:", error);
+            } finally {
+                setIsLoading(false);
             }
-        }
+        };
+        fetchUser();
     }, []);
 
-    const handleSave = (e: React.FormEvent) => {
+    const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
-        setIsEditing(false);
-        // Simulate API call
-        console.log("Saved profile:", userData);
+
+        try {
+            const res = await fetch('/api/user', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: userData.id, // mapped to full_name in API
+                    nik: userData.nik,
+                    email: userData.email,
+                    location: userData.location,
+                    bio: userData.bio
+                })
+            });
+
+            if (res.ok) {
+                setIsEditing(false);
+                // Optional: Show success toast
+            } else {
+                console.error("Failed to update profile");
+            }
+        } catch (error) {
+            console.error("Error saving profile:", error);
+        }
     };
+
+    if (isLoading) {
+        return <div className="w-full h-96 flex items-center justify-center animate-pulse text-slate-400">Loading Profile...</div>;
+    }
 
     return (
         <motion.div
@@ -122,7 +162,7 @@ const Profile = () => {
                                         <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                                         <input
                                             type="text"
-                                            disabled
+                                            disabled // NIK should likely be read-only
                                             value={userData.nik}
                                             className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-100 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 cursor-not-allowed"
                                         />
