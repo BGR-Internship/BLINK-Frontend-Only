@@ -25,6 +25,7 @@ const Chatbot = () => {
         }
     ]);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const inputRef = useRef<HTMLTextAreaElement>(null);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -33,6 +34,14 @@ const Chatbot = () => {
     useEffect(() => {
         scrollToBottom();
     }, [messages, isLoading]);
+
+    // Auto-resize textarea
+    useEffect(() => {
+        if (inputRef.current) {
+            inputRef.current.style.height = 'auto';
+            inputRef.current.style.height = `${inputRef.current.scrollHeight}px`;
+        }
+    }, [inputValue]);
 
     const handleSendMessage = async (e?: React.FormEvent) => {
         e?.preventDefault();
@@ -204,7 +213,7 @@ const Chatbot = () => {
 
                                         <div
                                             className={clsx(
-                                                "p-3.5 shadow-sm text-sm leading-relaxed relative group transition-all duration-200",
+                                                "p-3.5 shadow-sm text-sm leading-relaxed relative group transition-all duration-200 break-words whitespace-pre-wrap min-w-[60px]",
                                                 msg.sender === 'user'
                                                     ? "bg-[#E0F2F1] text-teal-900 rounded-2xl rounded-tr-sm border border-teal-100" // Pastel Teal
                                                     : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-100 dark:border-slate-700 rounded-2xl rounded-tl-sm"
@@ -263,20 +272,27 @@ const Chatbot = () => {
                                 onSubmit={handleSendMessage}
                                 className="relative flex items-center gap-2 bg-slate-100 dark:bg-slate-800/50 p-1.5 rounded-2xl border border-transparent focus-within:border-primary/30 focus-within:bg-white dark:focus-within:bg-slate-800 transition-all duration-300 shadow-inner"
                             >
-                                <div className="pl-3 text-slate-400">
+                                <div className="pl-3 text-slate-400 self-end mb-2.5">
                                     <MessageSquare size={18} />
                                 </div>
-                                <input
-                                    type="text"
+                                <textarea
+                                    ref={inputRef}
                                     value={inputValue}
                                     onChange={(e) => setInputValue(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && !e.shiftKey) {
+                                            e.preventDefault();
+                                            handleSendMessage(e);
+                                        }
+                                    }}
                                     placeholder="Ketik pesan..."
-                                    className="flex-1 bg-transparent border-none focus:ring-0 text-sm text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 py-2.5"
+                                    rows={1}
+                                    className="flex-1 bg-transparent border-none focus:ring-0 text-sm text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 py-2.5 resize-none max-h-32 overflow-y-auto"
                                 />
                                 <button
                                     type="submit"
                                     disabled={!inputValue.trim() || isLoading}
-                                    className="p-2.5 bg-gradient-to-r from-primary to-secondary text-white rounded-xl shadow-md hover:shadow-lg disabled:opacity-50 disabled:shadow-none hover:scale-105 active:scale-95 transition-all duration-200"
+                                    className="p-2.5 bg-gradient-to-r from-primary to-secondary text-white rounded-xl shadow-md hover:shadow-lg disabled:opacity-50 disabled:shadow-none hover:scale-105 active:scale-95 transition-all duration-200 self-end mb-1"
                                 >
                                     <Send size={18} className={clsx(isLoading ? "opacity-0" : "opacity-100")} />
                                     {isLoading && (
