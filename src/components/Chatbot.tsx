@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Send, Maximize2, Minimize2 } from 'lucide-react';
+import { X, Send, Maximize2, Minimize2, Sparkles, MessageSquare } from 'lucide-react';
 import clsx from 'clsx';
 import BilaLogo from '../assets/BILA AI 1.png';
 
@@ -15,11 +15,11 @@ const Chatbot = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [isMaximized, setIsMaximized] = useState(false);
     const [inputValue, setInputValue] = useState('');
-    const [isLoading, setIsLoading] = useState(false); // Added loading state
+    const [isLoading, setIsLoading] = useState(false);
     const [messages, setMessages] = useState<Message[]>([
         {
             id: '1',
-            text: "Hello! I'm Bila, your personal assistant. How can I help you today?",
+            text: "Halo! Saya Bila, asisten pribadi Anda. Ada yang bisa saya bantu hari ini?",
             sender: 'bot',
             timestamp: new Date()
         }
@@ -32,7 +32,7 @@ const Chatbot = () => {
 
     useEffect(() => {
         scrollToBottom();
-    }, [messages]);
+    }, [messages, isLoading]);
 
     const handleSendMessage = async (e?: React.FormEvent) => {
         e?.preventDefault();
@@ -56,19 +56,19 @@ const Chatbot = () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     message: newUserMessage.text,
-                    model: "gemma3:4b"
+                    model: "gemma3:4b" // Or ensure this matches your server config
                 }),
             });
 
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.error || 'Failed to get response');
+                throw new Error(data.error || 'Gagal mendapatkan respons');
             }
 
             const botMessage: Message = {
                 id: (Date.now() + 1).toString(),
-                text: data.reply || "I didn't get a response.",
+                text: data.reply || "Maaf, saya tidak mendapatkan respons.",
                 sender: 'bot',
                 timestamp: new Date()
             };
@@ -77,7 +77,7 @@ const Chatbot = () => {
             console.error('Chat error:', error);
             const errorMessage: Message = {
                 id: (Date.now() + 1).toString(),
-                text: "Sorry, I'm having trouble connecting to my brain (Ollama). Please ensure the backend and Ollama are running.",
+                text: "Maaf, saya mengalami masalah saat terhubung ke otak saya (Ollama). Pastikan backend dan Ollama berjalan.",
                 sender: 'bot',
                 timestamp: new Date()
             };
@@ -90,80 +90,86 @@ const Chatbot = () => {
     return (
         <>
             {/* Toggle Button */}
-            <motion.button
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={() => setIsOpen(!isOpen)}
-                className="fixed bottom-6 right-6 z-50 p-0 bg-transparent rounded-full shadow-lg shadow-primary/30 flex items-center justify-center transition-all overflow-hidden border-2 border-white"
-            >
-                {isOpen ? (
-                    <div className="w-14 h-14 bg-gradient-to-r from-primary to-secondary flex items-center justify-center rounded-full">
-                        <X size={28} className="text-white" />
-                    </div>
-                ) : (
-                    <div className="relative w-16 h-16">
-                        <img
-                            src={BilaLogo}
-                            alt="Bila AI"
-                            className="w-full h-full object-cover"
-                        />
+            <AnimatePresence>
+                {!isOpen && (
+                    <motion.button
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0, opacity: 0 }}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setIsOpen(true)}
+                        className="fixed bottom-6 right-6 z-50 group"
+                    >
+                        <div className="relative w-16 h-16 rounded-full overflow-hidden shadow-2xl shadow-primary/40 border-2 border-white/50 backdrop-blur-sm transition-transform duration-300 group-hover:shadow-primary/60">
+                            <div className="absolute inset-0 bg-gradient-to-tr from-primary to-secondary opacity-0 group-hover:opacity-20 transition-opacity" />
+                            <img
+                                src={BilaLogo}
+                                alt="Bila AI"
+                                className="w-full h-full object-cover"
+                            />
+                        </div>
+                        {/* Status Indicator */}
                         <span className="absolute top-0 right-0 flex h-4 w-4">
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                             <span className="relative inline-flex rounded-full h-4 w-4 bg-emerald-500 border-2 border-white"></span>
                         </span>
-                    </div>
+                    </motion.button>
                 )}
-            </motion.button>
+            </AnimatePresence>
 
             {/* Chat Window */}
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
-                        initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                        initial={{ opacity: 0, y: 20 }}
                         animate={{
                             opacity: 1,
                             y: 0,
-                            scale: 1,
-                            width: isMaximized ? '600px' : '384px', // 384px is w-96
-                            height: isMaximized ? '80vh' : '500px',
                         }}
-                        exit={{ opacity: 0, y: 20, scale: 0.95 }}
-                        transition={{ duration: 0.2 }}
+                        exit={{ opacity: 0, y: 20 }}
+                        transition={{ duration: 0.3, ease: "easeInOut" }}
                         className={clsx(
-                            "fixed bg-white rounded-2xl shadow-2xl border border-slate-100 flex flex-col z-50 overflow-hidden transition-all duration-300",
-                            isMaximized ? "bottom-6 right-6 max-w-[calc(100vw-3rem)]" : "bottom-24 right-6 w-96 max-w-[calc(100vw-3rem)] h-[500px]"
+                            "fixed z-50 flex flex-col overflow-hidden shadow-2xl backdrop-blur-xl border border-white/20 transition-all duration-300",
+                            isMaximized
+                                ? "inset-4 sm:inset-auto sm:bottom-6 sm:right-6 sm:w-[600px] sm:h-[80vh] rounded-2xl bg-white/95 dark:bg-slate-900/95"
+                                : "bottom-4 left-4 right-4 h-[500px] sm:left-auto sm:right-6 sm:bottom-6 sm:w-96 sm:h-[550px] rounded-3xl bg-white/90 dark:bg-slate-900/90"
                         )}
                     >
                         {/* Header */}
-                        <div className="bg-gradient-to-r from-primary to-secondary p-4 flex items-center justify-between text-white cursor-pointer" onClick={() => setIsMaximized(!isMaximized)}>
+                        <div className="relative bg-teal-50 dark:bg-slate-800 p-4 flex items-center justify-between border-b border-teal-100 dark:border-slate-700">
                             <div className="flex items-center gap-3">
-                                <div className="bg-white/20 p-1 rounded-full backdrop-blur-sm">
-                                    <img
-                                        src={BilaLogo}
-                                        alt="Bila AI"
-                                        className="w-10 h-10 rounded-full object-cover"
-                                    />
+                                <div className="relative">
+                                    <div className="w-10 h-10 rounded-full border border-teal-100 dark:border-slate-600 overflow-hidden bg-white">
+                                        <img
+                                            src={BilaLogo}
+                                            alt="Bila AI"
+                                            className="w-full h-full object-cover"
+                                        />
+                                    </div>
+                                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-400 border-2 border-white rounded-full" />
                                 </div>
                                 <div>
-                                    <h3 className="font-bold">Bila</h3>
-                                    <div className="flex items-center gap-1.5 opacity-90">
-                                        <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
-                                        <span className="text-xs">Online</span>
-                                    </div>
+                                    <h3 className="font-bold text-lg leading-none flex items-center gap-1 text-slate-800 dark:text-white">
+                                        Bila
+                                        <Sparkles size={14} className="text-teal-400" />
+                                    </h3>
+                                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Asisten Cerdas Anda</span>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-2">
+
+                            <div className="flex items-center gap-1">
                                 <button
-                                    onClick={(e) => { e.stopPropagation(); setIsMaximized(!isMaximized); }}
-                                    className="p-1 hover:bg-white/20 rounded-lg transition-colors"
+                                    onClick={() => setIsMaximized(!isMaximized)}
+                                    className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors text-slate-600 dark:text-slate-300"
+                                    title={isMaximized ? "Kecilkan" : "Perbesar"}
                                 >
                                     {isMaximized ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
                                 </button>
                                 <button
-                                    onClick={(e) => { e.stopPropagation(); setIsOpen(false); }}
-                                    className="p-1 hover:bg-white/20 rounded-lg transition-colors"
+                                    onClick={() => setIsOpen(false)}
+                                    className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors text-slate-600 dark:text-slate-300"
+                                    title="Tutup"
                                 >
                                     <X size={20} />
                                 </button>
@@ -171,53 +177,121 @@ const Chatbot = () => {
                         </div>
 
                         {/* Messages Area */}
-                        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50">
+                        <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700">
+                            <div className="flex justify-center my-2">
+                                <span className="text-[10px] font-medium text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">
+                                    Hari ini
+                                </span>
+                            </div>
+
                             {messages.map((msg) => (
-                                <div
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
                                     key={msg.id}
                                     className={clsx(
                                         "flex w-full",
                                         msg.sender === 'user' ? "justify-end" : "justify-start"
                                     )}
                                 >
-                                    <div
-                                        className={clsx(
-                                            "max-w-[80%] p-3 rounded-2xl text-sm leading-relaxed shadow-sm",
-                                            msg.sender === 'user'
-                                                ? "bg-primary text-white rounded-br-none"
-                                                : "bg-white text-slate-700 border border-slate-100 rounded-bl-none"
+                                    <div className={clsx("flex max-w-[85%] gap-2", msg.sender === 'user' ? "flex-row-reverse" : "flex-row")}>
+                                        {/* Avatar for Bot */}
+                                        {msg.sender === 'bot' && (
+                                            <div className="w-8 h-8 rounded-full bg-teal-50 p-0.5 mt-auto flex-shrink-0 border border-teal-100">
+                                                <img src={BilaLogo} className="w-full h-full rounded-full object-cover bg-white" alt="Bila" />
+                                            </div>
                                         )}
-                                    >
-                                        <p>{msg.text}</p>
-                                        <span className={clsx(
-                                            "text-[10px] mt-1 block opacity-70",
-                                            msg.sender === 'user' ? "text-white/80" : "text-slate-400"
-                                        )}>
-                                            {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                        </span>
+
+                                        <div
+                                            className={clsx(
+                                                "p-3.5 shadow-sm text-sm leading-relaxed relative group transition-all duration-200",
+                                                msg.sender === 'user'
+                                                    ? "bg-[#E0F2F1] text-teal-900 rounded-2xl rounded-tr-sm border border-teal-100" // Pastel Teal
+                                                    : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-100 dark:border-slate-700 rounded-2xl rounded-tl-sm"
+                                            )}
+                                        >
+                                            <p>{msg.text}</p>
+                                            <span className={clsx(
+                                                "text-[10px] mt-1.5 block opacity-60 font-medium text-right",
+                                                msg.sender === 'user' ? "text-teal-700" : "text-slate-400"
+                                            )}>
+                                                {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </span>
+                                        </div>
                                     </div>
-                                </div>
+                                </motion.div>
                             ))}
+
+                            {isLoading && (
+                                <motion.div
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    className="flex w-full justify-start"
+                                >
+                                    <div className="flex items-end gap-2">
+                                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary p-0.5 flex-shrink-0">
+                                            <img src={BilaLogo} className="w-full h-full rounded-full object-cover bg-white" alt="Bila" />
+                                        </div>
+                                        <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 p-3 rounded-2xl rounded-tl-sm shadow-sm">
+                                            <div className="flex gap-1.5">
+                                                <motion.span
+                                                    animate={{ y: [0, -5, 0] }}
+                                                    transition={{ repeat: Infinity, duration: 0.6, delay: 0 }}
+                                                    className="w-2 h-2 bg-slate-400 rounded-full"
+                                                />
+                                                <motion.span
+                                                    animate={{ y: [0, -5, 0] }}
+                                                    transition={{ repeat: Infinity, duration: 0.6, delay: 0.2 }}
+                                                    className="w-2 h-2 bg-slate-400 rounded-full"
+                                                />
+                                                <motion.span
+                                                    animate={{ y: [0, -5, 0] }}
+                                                    transition={{ repeat: Infinity, duration: 0.6, delay: 0.4 }}
+                                                    className="w-2 h-2 bg-slate-400 rounded-full"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            )}
                             <div ref={messagesEndRef} />
                         </div>
 
                         {/* Input Area */}
-                        <form onSubmit={handleSendMessage} className="p-4 bg-white border-t border-slate-100 flex gap-2">
-                            <input
-                                type="text"
-                                value={inputValue}
-                                onChange={(e) => setInputValue(e.target.value)}
-                                placeholder="Type your message..."
-                                className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-slate-700 placeholder:text-slate-400"
-                            />
-                            <button
-                                type="submit"
-                                disabled={!inputValue.trim()}
-                                className="p-2 bg-primary text-white rounded-xl hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        <div className="p-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-t border-slate-100 dark:border-slate-800">
+                            <form
+                                onSubmit={handleSendMessage}
+                                className="relative flex items-center gap-2 bg-slate-100 dark:bg-slate-800/50 p-1.5 rounded-2xl border border-transparent focus-within:border-primary/30 focus-within:bg-white dark:focus-within:bg-slate-800 transition-all duration-300 shadow-inner"
                             >
-                                <Send size={20} />
-                            </button>
-                        </form>
+                                <div className="pl-3 text-slate-400">
+                                    <MessageSquare size={18} />
+                                </div>
+                                <input
+                                    type="text"
+                                    value={inputValue}
+                                    onChange={(e) => setInputValue(e.target.value)}
+                                    placeholder="Ketik pesan..."
+                                    className="flex-1 bg-transparent border-none focus:ring-0 text-sm text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 py-2.5"
+                                />
+                                <button
+                                    type="submit"
+                                    disabled={!inputValue.trim() || isLoading}
+                                    className="p-2.5 bg-gradient-to-r from-primary to-secondary text-white rounded-xl shadow-md hover:shadow-lg disabled:opacity-50 disabled:shadow-none hover:scale-105 active:scale-95 transition-all duration-200"
+                                >
+                                    <Send size={18} className={clsx(isLoading ? "opacity-0" : "opacity-100")} />
+                                    {isLoading && (
+                                        <div className="absolute inset-0 flex items-center justify-center">
+                                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                        </div>
+                                    )}
+                                </button>
+                            </form>
+                            <div className="flex justify-center mt-2">
+                                <span className="text-[10px] text-slate-400 dark:text-slate-500 flex items-center gap-1">
+                                    Didukung oleh <Sparkles size={10} className="text-primary" /> BILA AI
+                                </span>
+                            </div>
+                        </div>
                     </motion.div>
                 )}
             </AnimatePresence>
