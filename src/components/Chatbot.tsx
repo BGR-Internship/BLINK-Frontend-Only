@@ -65,7 +65,7 @@ const Chatbot = () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     message: newUserMessage.text,
-                    model: "gemma3:4b" // Or ensure this matches your server config
+                    model: "gemma3:4b"
                 }),
             });
 
@@ -75,23 +75,46 @@ const Chatbot = () => {
                 throw new Error(data.error || 'Gagal mendapatkan respons');
             }
 
+            const fullText = data.reply || "Maaf, saya tidak mendapatkan respons.";
+
+            // Create a bot message with empty text first
+            const botMessageId = (Date.now() + 1).toString();
             const botMessage: Message = {
-                id: (Date.now() + 1).toString(),
-                text: data.reply || "Maaf, saya tidak mendapatkan respons.",
+                id: botMessageId,
+                text: "",
                 sender: 'bot',
                 timestamp: new Date()
             };
+
             setMessages(prev => [...prev, botMessage]);
+            setIsLoading(false); // Stop "typing" indicator before streaming starts
+
+            // Streaming Effect
+            let currentText = "";
+            const words = fullText.split(' ');
+            let wordIndex = 0;
+
+            const streamInterval = setInterval(() => {
+                if (wordIndex < words.length) {
+                    currentText += (wordIndex === 0 ? "" : " ") + words[wordIndex];
+                    setMessages(prev => prev.map(m =>
+                        m.id === botMessageId ? { ...m, text: currentText } : m
+                    ));
+                    wordIndex++;
+                } else {
+                    clearInterval(streamInterval);
+                }
+            }, 50); // Speed of streaming
+
         } catch (error) {
             console.error('Chat error:', error);
             const errorMessage: Message = {
                 id: (Date.now() + 1).toString(),
-                text: "Maaf, saya mengalami masalah saat terhubung ke otak saya (Ollama). Pastikan backend dan Ollama berjalan.",
+                text: "Maaf, saya tidak dapat terhubung ke AI. Pastikan server berjalan.",
                 sender: 'bot',
                 timestamp: new Date()
             };
             setMessages(prev => [...prev, errorMessage]);
-        } finally {
             setIsLoading(false);
         }
     };
@@ -213,16 +236,18 @@ const Chatbot = () => {
 
                                         <div
                                             className={clsx(
-                                                "p-3.5 shadow-sm text-sm leading-relaxed relative group transition-all duration-200 break-words whitespace-pre-wrap min-w-[60px]",
+                                                "p-4 shadow-sm text-sm leading-relaxed relative group transition-all duration-200 break-words whitespace-pre-wrap min-w-[80px]",
                                                 msg.sender === 'user'
-                                                    ? "bg-[#E0F2F1] text-teal-900 rounded-2xl rounded-tr-sm border border-teal-100" // Pastel Teal
-                                                    : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-100 dark:border-slate-700 rounded-2xl rounded-tl-sm"
+                                                    ? "bg-teal-500 text-white rounded-2xl rounded-tr-sm shadow-md shadow-teal-500/10"
+                                                    : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-100 dark:border-slate-700 rounded-2xl rounded-tl-sm shadow-sm"
                                             )}
                                         >
-                                            <p>{msg.text}</p>
+                                            <div className="font-normal">
+                                                {msg.text || (msg.sender === 'bot' && !isLoading ? <span className="italic opacity-50">Mengetik...</span> : msg.text)}
+                                            </div>
                                             <span className={clsx(
-                                                "text-[10px] mt-1.5 block opacity-60 font-medium text-right",
-                                                msg.sender === 'user' ? "text-teal-700" : "text-slate-400"
+                                                "text-[10px] mt-2 block opacity-60 font-medium text-right uppercase tracking-tighter",
+                                                msg.sender === 'user' ? "text-teal-100" : "text-slate-400"
                                             )}>
                                                 {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                             </span>
