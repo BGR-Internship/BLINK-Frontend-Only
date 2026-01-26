@@ -39,13 +39,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         };
         setUser(mockUser);
         localStorage.setItem('blink_user', JSON.stringify(mockUser));
-        localStorage.setItem('token', 'mock-token-123');
+        localStorage.setItem('blink_token', 'mock-token-123');
     };
 
     const logout = () => {
         setUser(null);
         localStorage.removeItem('blink_user');
-        localStorage.removeItem('token');
+        localStorage.removeItem('blink_token');
     };
 
     return (

@@ -18,7 +18,7 @@ const Login = () => {
 
     // Check if user is already logged in
     useEffect(() => {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('blink_token');
         if (token) {
             navigate('/', { replace: true });
         }
@@ -43,8 +43,8 @@ const Login = () => {
             const data = await response.json();
 
             if (response.ok) {
-                localStorage.setItem('token', data.token);
-                localStorage.setItem('user', JSON.stringify(data.user));
+                localStorage.setItem('blink_token', data.token);
+                localStorage.setItem('blink_user', JSON.stringify(data.user));
                 navigate('/');
             } else {
                 setErrorMsg(data.message || "Login failed");

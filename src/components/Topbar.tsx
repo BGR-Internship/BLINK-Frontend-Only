@@ -3,19 +3,21 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
+import { useAuth } from '../context/AuthContext';
 
 interface TopbarProps {
     onMenuClick?: () => void;
 }
 
 const Topbar = ({ onMenuClick }: TopbarProps) => {
+    const { logout } = useAuth();
     const [userData, setUserData] = useState({ id: '', nik: '' });
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const navigate = useNavigate();
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        const storedUser = localStorage.getItem('user');
+        const storedUser = localStorage.getItem('blink_user');
         if (storedUser) {
             try {
                 const parsed = JSON.parse(storedUser);
@@ -25,6 +27,8 @@ const Topbar = ({ onMenuClick }: TopbarProps) => {
                 });
             } catch (error) {
                 console.error("Failed to parse user data", error);
+                // Fallback to clearing invalid data
+                localStorage.removeItem('blink_user');
             }
         }
 
@@ -42,8 +46,7 @@ const Topbar = ({ onMenuClick }: TopbarProps) => {
     }, []);
 
     const handleLogout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        logout();
         navigate('/login');
     };
 

@@ -38,10 +38,10 @@ const Layout = ({ children, variant = 'dashboard' }: LayoutProps) => {
     }
 
     return (
-        <div className="min-h-screen bg-slate-50/50 dark:bg-slate-900 relative overflow-x-hidden transition-colors duration-300">
+        <div className="min-h-screen bg-slate-100 dark:bg-slate-950 relative overflow-x-hidden transition-colors duration-300">
             {/* Background decorations */}
-            <div className="fixed top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary/5 dark:bg-primary/20 blur-[120px] pointer-events-none transition-colors duration-300" />
-            <div className="fixed bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-secondary/5 dark:bg-secondary/10 blur-[120px] pointer-events-none transition-colors duration-300" />
+            <div className="fixed top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary/10 dark:bg-primary/5 blur-[120px] pointer-events-none transition-colors duration-300" />
+            <div className="fixed bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-secondary/10 dark:bg-secondary/5 blur-[120px] pointer-events-none transition-colors duration-300" />
 
             <CampaignPopup />
 

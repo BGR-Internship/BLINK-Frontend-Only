@@ -40,12 +40,12 @@ type Service = {
 
 // Dummy Data
 const DUMMY_SERVICES = [
-    { id: '1', title: 'VINA', description: 'Visitor integrated and administration', icon: 'Truck', color: 'bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300', link: 'https://carolina.bgrlogistik.id/' },
-    { id: '2', title: 'RAISA', description: 'Recruitment Internal Assessment Application', icon: 'Users', color: 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300', link: 'https://amanda.bgrlogistik.id/' },
-    { id: '3', title: 'SISKA', description: 'Sistem Informasi Kepegawaian', icon: 'Fingerprint', color: 'bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300', link: 'https://siska.bgrlogistik.id/' },
-    { id: '4', title: 'MADONA', description: 'Manajemen Dokumen Pembayaran Nasional ', icon: 'CreditCard', color: 'bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300', link: 'https://wina.bgrlogistik.id/' },
-    { id: '5', title: 'MONALISA', description: 'Monitoring, Asset, Lisense Application', icon: 'Key', color: 'bg-cyan-100 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300', link: 'https://monalisa.bgrlogistik.id/' },
-    { id: '6', title: 'DENADA', description: 'Depo Manajemen dan Agency', icon: 'Container', color: 'bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-300', link: 'https://helpdesk.bgrlogistik.id/?c=7' },
+    { id: '1', title: 'VINA', description: 'Visitor integrated and administration', icon: 'Truck', color: 'bg-blue-500/10 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300', link: 'https://carolina.bgrlogistik.id/' },
+    { id: '2', title: 'RAISA', description: 'Recruitment Internal Assessment Application', icon: 'Users', color: 'bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-300', link: 'https://amanda.bgrlogistik.id/' },
+    { id: '3', title: 'SISKA', description: 'Sistem Informasi Kepegawaian', icon: 'Fingerprint', color: 'bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-300', link: 'https://siska.bgrlogistik.id/' },
+    { id: '4', title: 'MADONA', description: 'Manajemen Dokumen Pembayaran Nasional ', icon: 'CreditCard', color: 'bg-purple-500/10 dark:bg-purple-500/20 text-purple-600 dark:text-purple-300', link: 'https://wina.bgrlogistik.id/' },
+    { id: '5', title: 'MONALISA', description: 'Monitoring, Asset, Lisense Application', icon: 'Key', color: 'bg-cyan-500/10 dark:bg-cyan-500/20 text-cyan-600 dark:text-cyan-300', link: 'https://monalisa.bgrlogistik.id/' },
+    { id: '6', title: 'DENADA', description: 'Depo Manajemen dan Agency', icon: 'Container', color: 'bg-orange-500/10 dark:bg-orange-500/20 text-orange-600 dark:text-orange-300', link: 'https://helpdesk.bgrlogistik.id/?c=7' },
 ];
 
 const IconMap: Record<string, any> = {
@@ -64,10 +64,12 @@ const ServiceCard = ({ service, isEditing, isOverlay = false }: { service: Servi
         <Component
             {...linkProps}
             className={clsx(
-                "group relative bg-white dark:bg-slate-800 rounded-3xl p-4 md:p-6 shadow-sm border border-slate-100 dark:border-slate-700 h-full flex flex-col items-center text-center",
-                !isEditing && !isOverlay && "hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer",
+                "group relative bg-white dark:bg-slate-900/50 rounded-3xl p-4 md:p-6 h-full flex flex-col items-center text-center backdrop-blur-sm",
+                // Light mode: Shadow for depth, no border for clean look. Dark mode: Border remains.
+                "shadow-md dark:shadow-none border-b-4 border-transparent dark:border-slate-800",
+                !isEditing && !isOverlay && "hover:shadow-xl hover:-translate-y-1 hover:border-primary/20 dark:hover:border-primary/50 transition-all duration-300 cursor-pointer",
                 isEditing && "cursor-grab",
-                isOverlay && "shadow-2xl scale-105 ring-2 ring-primary/50 cursor-grabbing bg-white/90 backdrop-blur-sm z-50 transform-gpu"
+                isOverlay && "shadow-2xl scale-105 ring-2 ring-primary/50 cursor-grabbing bg-white/95 backdrop-blur-xl z-50 transform-gpu"
             )}
         >
             {/* Shimmer Effect (Only in view mode) */}
@@ -116,7 +118,7 @@ const SortableServiceCard = ({ service, isEditing }: { service: Service; isEditi
     };
 
     return (
-        <div ref={setNodeRef} style={style} {...attributes} {...listeners} className={clsx("h-full outline-none", isDragging ? "opacity-30" : "")}>
+        <div ref={setNodeRef} style={style} {...attributes} {...listeners} className={clsx("h-full outline-none", isDragging ? "opacity-50 scale-95 grayscale" : "")}>
             <ServiceCard service={service} isEditing={isEditing} />
         </div>
     );
