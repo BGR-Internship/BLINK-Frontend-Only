@@ -60,7 +60,9 @@ const Chatbot = () => {
         setIsLoading(true);
 
         try {
-            const response = await fetch('http://localhost:5000/api/chat', {
+            // Updated to use Environment Variable for RunPod/Production support
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+            const response = await fetch(`${API_URL}/chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -75,7 +77,9 @@ const Chatbot = () => {
                 throw new Error(data.error || 'Gagal mendapatkan respons');
             }
 
-            const fullText = data.reply || "Maaf, saya tidak mendapatkan respons.";
+            // Python API returns 'answer', Node middleware returned 'reply'.
+            // supporting both for safety.
+            const fullText = data.answer || data.reply || "Maaf, saya tidak mendapatkan respons.";
 
             // Create a bot message with empty text first
             const botMessageId = (Date.now() + 1).toString();
