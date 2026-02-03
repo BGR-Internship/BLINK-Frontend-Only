@@ -61,8 +61,8 @@ const Chatbot = () => {
 
         try {
             // Updated to use Environment Variable for RunPod/Production support
-            // const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-            const response = await fetch('https://tt772cdzx3b7vl-3000.proxy.runpod.net/api/chat', {
+            const API_URL = import.meta.env.VITE_POD_API_URL || 'http://localhost:8000/api/chat';
+            const response = await fetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -74,7 +74,8 @@ const Chatbot = () => {
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.error || 'Gagal mendapatkan respons');
+                console.error('Chat API Error:', response.status, response.statusText);
+                throw new Error(data.error || `Gagal mendapatkan respons (Status: ${response.status})`);
             }
 
             // Python API returns 'answer', Node middleware returned 'reply'.

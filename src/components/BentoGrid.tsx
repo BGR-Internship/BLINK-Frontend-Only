@@ -1,10 +1,7 @@
 
 import { useEffect, useState } from 'react';
 
-import {
-    Wifi, BookOpen, Clock, Fingerprint, FolderKanban, Mail, GraduationCap,
-    Search, Truck, Users, CreditCard, Key, Container, Grid, Check, X
-} from 'lucide-react';
+import * as LucideIcons from 'lucide-react';
 import clsx from 'clsx';
 import {
     DndContext,
@@ -28,6 +25,8 @@ import {
     rectSortingStrategy
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { Grid, Check, X, Search } from 'lucide-react'; // Import UI icons explicitly
+import { useAuth } from '../context/AuthContext';
 
 // Type definition simulating backend response
 type Service = {
@@ -49,13 +48,33 @@ const DUMMY_SERVICES = [
     { id: '6', title: 'DENADA', description: 'Depo Manajemen dan Agency', icon: 'Container', color: 'bg-orange-500/10 dark:bg-orange-500/20 text-orange-600 dark:text-orange-300', link: 'https://helpdesk.bgrlogistik.id/?c=7' },
 ];
 
-const IconMap: Record<string, any> = {
-    Wifi, BookOpen, Clock, Fingerprint, FolderKanban, Mail, GraduationCap, Truck, Users, CreditCard, Key, Container
+const COLOR_PALETTE = [
+    'bg-blue-500/10 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300',
+    'bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-300',
+    'bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-300',
+    'bg-purple-500/10 dark:bg-purple-500/20 text-purple-600 dark:text-purple-300',
+    'bg-cyan-500/10 dark:bg-cyan-500/20 text-cyan-600 dark:text-cyan-300',
+    'bg-orange-500/10 dark:bg-orange-500/20 text-orange-600 dark:text-orange-300',
+    'bg-pink-500/10 dark:bg-pink-500/20 text-pink-600 dark:text-pink-300',
+    'bg-teal-500/10 dark:bg-teal-500/20 text-teal-600 dark:text-teal-300',
+];
+
+// Helper to get icon safely
+const getIcon = (iconName: string) => {
+    // 1. Remove XML tags if present e.g. <Truck /> -> Truck
+    const cleanName = iconName.replace(/[<>/\s]/g, '');
+
+    // 2. Fetch from Lucide
+    // @ts-ignore
+    const IconComponent = LucideIcons[cleanName];
+
+    // 3. Fallback
+    return IconComponent || LucideIcons.FolderKanban;
 };
 
 // --- Presentational Card Component ---
 const ServiceCard = ({ service, isEditing, isOverlay = false }: { service: Service; isEditing: boolean; isOverlay?: boolean }) => {
-    const Icon = IconMap[service.icon] || FolderKanban;
+    const Icon = getIcon(service.icon);
 
     // In edit mode or overlay, we use div to prevent clicking
     const Component = (!isEditing && service.link) ? 'a' : 'div';
@@ -73,6 +92,12 @@ const ServiceCard = ({ service, isEditing, isOverlay = false }: { service: Servi
                 isOverlay && "shadow-2xl scale-105 ring-2 ring-primary/50 cursor-grabbing bg-white/95 backdrop-blur-xl z-50 transform-gpu"
             )}
         >
+            {/* Shimmer Effect (Only in view mode)
+            {!isEditing && !isOverlay && (
+                <div className="absolute inset-0 translate-x-[-100%] group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/50 dark:via-white/10 to-transparent z-10 pointer-events-none" />
+            )} */}
+
+            {/* Edit Mode Indicator */}
             {isEditing && (
                 <div className="absolute top-2 right-2 text-slate-300">
                     <Grid size={16} />
@@ -110,7 +135,7 @@ const SortableServiceCard = ({ service, isEditing }: { service: Service; isEditi
     const style = {
         transform: CSS.Transform.toString(transform),
         transition,
-        touchAction: 'none'
+        touchAction: 'none',
     };
 
     return (
@@ -122,52 +147,98 @@ const SortableServiceCard = ({ service, isEditing }: { service: Service; isEditi
 
 const BentoGrid = () => {
     const [services, setServices] = useState<Service[]>([]);
+    const [defaultServices, setDefaultServices] = useState<Service[]>([]); // Store default order
     const [loading, setLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
     const [activeId, setActiveId] = useState<string | null>(null);
+    const [searchQuery, setSearchQuery] = useState('');
+    const { user } = useAuth();
+    const isSuperAdmin = user?.role === 'super_admin';
+
+    // Reset editing if user logs out or role changes
+    useEffect(() => {
+        if (!isSuperAdmin && isEditing) {
+            setIsEditing(false);
+        }
+    }, [isSuperAdmin, isEditing]);
 
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
         useSensor(TouchSensor, {
             activationConstraint: {
-                delay: 150,
-                tolerance: 5,
-                distance: 8
+                delay: 250,
+                tolerance: 8,
+                distance: 8,
+                direction: 'vertical',
+                pointerTypes: ['touch']
             }
         }),
         useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
     );
 
     useEffect(() => {
-        // Load from local storage or use dummy data
-        const loadServices = () => {
-            const savedOrder = localStorage.getItem('blink_services_order');
-            if (savedOrder) {
-                try {
-                    const parsedOrder: Service[] = JSON.parse(savedOrder);
-                    // Merge saved order with fresh dummy data (to apply color/icon updates)
-                    // This preserves the user's custom sort order but updates the visual properties
-                    const mergedServices = parsedOrder.map(item => {
-                        const freshItem = DUMMY_SERVICES.find(d => d.id === item.id);
-                        return freshItem || item;
-                    });
-                    setServices(mergedServices);
-                } catch (e) {
-                    console.error("Failed to parse saved services", e);
-                    setServices(DUMMY_SERVICES);
+        const fetchServices = async () => {
+            try {
+                const API_URL = import.meta.env.VITE_POD1_API_URL || 'http://localhost:3000/api/apps';
+                const response = await fetch(API_URL);
+                if (!response.ok) throw new Error('Failed to fetch');
+                const data = await response.json();
+
+                // Map DB data to frontend model
+                const mappedServices: Service[] = data.map((item: any, index: number) => ({
+                    id: String(item.Id),
+                    title: item.Nama_Aplikasi || 'No Title',
+                    description: item.Deskripsi || item.Deskripsi_Aplikasi || '',
+                    icon: item.Icon || 'FolderKanban',
+                    link: item.Link || '#',
+                    // Cycle through colors
+                    color: COLOR_PALETTE[index % COLOR_PALETTE.length]
+                })).filter((s: Service) => s.id && s.title && s.title !== 'No Title');
+
+                setDefaultServices(mappedServices);
+
+                // Check for saved order
+                const savedOrder = localStorage.getItem('blink_services_order');
+                if (savedOrder) {
+                    try {
+                        const parsedOrder: Service[] = JSON.parse(savedOrder);
+
+                        // Reconstruct order
+                        const fetchedMap = new Map(mappedServices.map(s => [s.id, s]));
+                        const reordered: Service[] = [];
+                        const savedIds = new Set();
+
+                        parsedOrder.forEach(savedItem => {
+                            // Verify ID exists in current data AND hasn't been added yet (prevent duplicates)
+                            if (fetchedMap.has(savedItem.id) && !savedIds.has(savedItem.id)) {
+                                reordered.push(fetchedMap.get(savedItem.id)!);
+                                savedIds.add(savedItem.id);
+                            }
+                        });
+
+                        mappedServices.forEach(s => {
+                            if (!savedIds.has(s.id)) {
+                                reordered.push(s);
+                            }
+                        });
+
+                        setServices(reordered);
+                    } catch (e) {
+                        console.error("Failed to restore order:", e);
+                        setServices(mappedServices);
+                    }
+                } else {
+                    setServices(mappedServices);
                 }
-            } else {
+            } catch (err) {
+                console.error("Error fetching services:", err);
                 setServices(DUMMY_SERVICES);
+            } finally {
+                setLoading(false);
             }
-            setLoading(false);
         };
 
-        // Small delay to prevent hydration mismatch/flicker if needed, or just run immediate
-        if (!localStorage.getItem('blink_services_order')) {
-            setTimeout(loadServices, 100);
-        } else {
-            loadServices();
-        }
+        fetchServices();
     }, []);
 
     const handleDragStart = (event: DragStartEvent) => {
@@ -195,13 +266,18 @@ const BentoGrid = () => {
 
     const handleReset = () => {
         if (confirm("Reset layout to default?")) {
-            setServices(DUMMY_SERVICES);
+            setServices(defaultServices);
             localStorage.removeItem('blink_services_order');
             setIsEditing(false);
         }
     };
 
     const activeService = services.find(s => s.id === activeId);
+
+    const filteredServices = services.filter(service =>
+        service.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        service.description.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
     // Drop Animation config for DragOverlay
     const dropAnimation: DropAnimation = {
@@ -226,27 +302,31 @@ const BentoGrid = () => {
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <button
-                        onClick={() => setIsEditing(!isEditing)}
-                        className={clsx(
-                            "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all",
-                            isEditing
-                                ? "bg-primary text-white shadow-lg shadow-primary/20"
-                                : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700"
-                        )}
-                    >
-                        {isEditing ? <Check size={16} /> : <Grid size={16} />}
-                        {isEditing ? 'Selesai' : 'Personalize'}
-                    </button>
+                    {isSuperAdmin && (
+                        <>
+                            <button
+                                onClick={() => setIsEditing(!isEditing)}
+                                className={clsx(
+                                    "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all",
+                                    isEditing
+                                        ? "bg-primary text-white shadow-lg shadow-primary/20"
+                                        : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700"
+                                )}
+                            >
+                                {isEditing ? <Check size={16} /> : <Grid size={16} />}
+                                {isEditing ? 'Selesai' : 'Personalize'}
+                            </button>
 
-                    {isEditing && (
-                        <button
-                            onClick={handleReset}
-                            className="p-2 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors"
-                            title="Reset Layout"
-                        >
-                            <X size={18} />
-                        </button>
+                            {isEditing && (
+                                <button
+                                    onClick={handleReset}
+                                    className="p-2 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors"
+                                    title="Reset Layout"
+                                >
+                                    <X size={18} />
+                                </button>
+                            )}
+                        </>
                     )}
 
                     <div className="relative w-full md:w-64 hidden sm:block">
@@ -254,6 +334,8 @@ const BentoGrid = () => {
                         <input
                             type="text"
                             placeholder="Cari layanan..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
                             disabled={isEditing}
                             className={clsx(
                                 "w-full pl-10 pr-4 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm placeholder:text-slate-400 text-slate-700 dark:text-slate-200 transition-all shadow-sm",
@@ -278,9 +360,9 @@ const BentoGrid = () => {
                     onDragEnd={handleDragEnd}
                     onDragCancel={handleDragCancel}
                 >
-                    <SortableContext items={services} strategy={rectSortingStrategy}>
+                    <SortableContext items={filteredServices} strategy={rectSortingStrategy}>
                         <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
-                            {services.map((service) => (
+                            {filteredServices.map((service) => (
                                 <SortableServiceCard
                                     key={service.id}
                                     service={service}
