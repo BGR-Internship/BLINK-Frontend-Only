@@ -61,7 +61,7 @@ const Chatbot = () => {
 
         try {
             // Updated to use Environment Variable for RunPod/Production support
-            const API_URL = import.meta.env.VITE_POD_API_URL || 'http://localhost:8000/api/chat';
+            const API_URL = import.meta.env.VITE_POD_API_URL || 'http://localhost:3000/api/chat';
             const response = await fetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
