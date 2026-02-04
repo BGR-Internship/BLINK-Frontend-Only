@@ -124,6 +124,15 @@ const Chatbot = () => {
         }
     };
 
+    const formatMessage = (text: string) => {
+        return text.split(/(\*\*.*?\*\*)/g).map((part, index) => {
+            if (part.startsWith('**') && part.endsWith('**')) {
+                return <strong key={index} className="font-bold text-teal-700 dark:text-teal-300">{part.slice(2, -2)}</strong>;
+            }
+            return <span key={index}>{part}</span>;
+        });
+    };
+
     return (
         <>
             {/* Toggle Button */}
@@ -248,7 +257,7 @@ const Chatbot = () => {
                                             )}
                                         >
                                             <div className="font-normal">
-                                                {msg.text || (msg.sender === 'bot' && !isLoading ? <span className="italic opacity-50">Mengetik...</span> : msg.text)}
+                                                {msg.text ? formatMessage(msg.text) : (msg.sender === 'bot' && !isLoading ? <span className="italic opacity-50">Mengetik...</span> : null)}
                                             </div>
                                             <span className={clsx(
                                                 "text-[10px] mt-2 block opacity-60 font-medium text-right uppercase tracking-tighter",
