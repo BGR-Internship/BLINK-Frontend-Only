@@ -148,6 +148,7 @@ const Chatbot = () => {
                                 className="w-full h-full object-cover"
                             />
                         </div>
+                        {/* Status Indicator */}
                         <span className="absolute top-0 right-0 flex h-4 w-4">
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                             <span className="relative inline-flex rounded-full h-4 w-4 bg-emerald-500 border-2 border-white"></span>
@@ -245,9 +246,9 @@ const Chatbot = () => {
 
                                         <div
                                             className={clsx(
-                                                "p-4 shadow-sm text-sm leading-relaxed relative group transition-all duration-200 break-words whitespace-pre-wrap min-w-[80px]",
+                                                "p-4 shadow-sm text-sm leading-relaxed relative group transition-all duration-200 break-words min-w-[80px]", // FIXED: Hapus whitespace-pre-wrap global
                                                 msg.sender === 'user'
-                                                    ? "bg-teal-500 text-white rounded-2xl rounded-tr-sm shadow-md shadow-teal-500/10"
+                                                    ? "bg-teal-500 text-white rounded-2xl rounded-tr-sm shadow-md shadow-teal-500/10 whitespace-pre-wrap" // FIXED: Hanya user pakai pre-wrap
                                                     : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-100 dark:border-slate-700 rounded-2xl rounded-tl-sm shadow-sm"
                                             )}
                                         >
@@ -305,7 +306,7 @@ const Chatbot = () => {
                                                 )}
                                             </div>
                                             <span className={clsx(
-                                                "text-[10px] mt-2 block opacity-60 font-medium text-right uppercase tracking-tighter",
+                                                "text-[10px] mt-1 block opacity-60 font-medium text-right uppercase tracking-tighter",
                                                 msg.sender === 'user' ? "text-teal-100" : "text-slate-400"
                                             )}>
                                                 {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -371,7 +372,7 @@ const Chatbot = () => {
                                     }}
                                     placeholder="Ketik pesan..."
                                     rows={1}
-                                    className="flex-1 bg-transparent border-none outline-none ring-0 focus:outline-none focus:ring-0 text-sm text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 py-2.5 resize-none max-h-32 overflow-y-auto"
+                                    className="flex-1 bg-transparent border-none outline-none focus:ring-0 text-sm text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 py-2.5 resize-none max-h-32 overflow-y-auto"
                                 />
                                 <button
                                     type="submit"
