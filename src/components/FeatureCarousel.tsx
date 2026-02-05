@@ -5,48 +5,49 @@ import SmoothImage from './ui/SmoothImage';
 
 
 
+// --- RUNPOD BACKEND URL ---
+const API_URL = "https://ui9oox4nr5tnfv-3000.proxy.runpod.net";
+
 const FeatureCarousel = () => {
 
     const [current, setCurrent] = useState(0);
 
     const [slides, setSlides] = useState<any[]>([{
         id: 'loading',
-        title: "",
-        subtitle: "",
-        color: "from-slate-200 to-slate-300 dark:from-slate-800 dark:to-slate-900",
-        image: "",
-        isLoading: true
+        title: "Loading...",
+        subtitle: "Please wait",
+        color: "from-slate-700 to-slate-900",
+        image: ""
     }]);
 
     useEffect(() => {
         const fetchBanner = async () => {
             try {
-                const res = await fetch('http://localhost:5000/api/banner');
+                // Updated to use RunPod URL
+                const res = await fetch(`${API_URL}/api/banner`);
                 const data = await res.json();
 
                 if (Array.isArray(data) && data.length > 0) {
                     const mappedSlides = data.map((item: any) => {
                         let imageUrl = item.image_path;
+                        // Fix image URL to point to Cloud Server
                         if (!imageUrl.startsWith('http')) {
-                            // If it's a relative path, assume valid public URL or backend static
-                            // For now we'll assumes it is served by the backend or public folder
-                            imageUrl = `http://localhost:5000${imageUrl}`;
+                            imageUrl = `${API_URL}/${imageUrl}`;
                         }
 
                         return {
                             id: String(item.id),
                             title: item.title,
                             subtitle: item.description,
-                            color: "from-blue-900 to-slate-900", // Can alternate colors if needed
+                            color: "from-blue-900 to-slate-900",
                             image: imageUrl
                         };
                     });
                     setSlides(mappedSlides);
                 } else if (data && data.image_path) {
-                    // Fallback for single object response (backward compatibility)
                     let imageUrl = data.image_path;
                     if (!imageUrl.startsWith('http')) {
-                        imageUrl = `http://localhost:5000/${imageUrl}`;
+                        imageUrl = `${API_URL}/${imageUrl}`;
                     }
 
                     setSlides([{
@@ -57,7 +58,6 @@ const FeatureCarousel = () => {
                         image: imageUrl
                     }]);
                 } else {
-                    // Fallback
                     setSlides([{
                         id: 'fallback-1',
                         title: "Welcome to Dashboard",
@@ -83,7 +83,6 @@ const FeatureCarousel = () => {
     const nextSlide = () => setCurrent((prev) => (prev + 1) % slides.length);
     const prevSlide = () => setCurrent((prev) => (prev - 1 + slides.length) % slides.length);
 
-    // Preload images for smoother transitions
     useEffect(() => {
         const nextIndex = (current + 1) % slides.length;
         const nextImage = slides[nextIndex]?.image;
@@ -105,10 +104,8 @@ const FeatureCarousel = () => {
                         transition={{ duration: 0.6, ease: "easeOut" }}
                         className={`w-full h-full rounded-2xl md:rounded-3xl overflow-hidden shadow-xl bg-gradient-to-br ${slides[current].color} relative`}
                     >
-                        {/* Background Image if available */}
                         {slides[current].image && (
                             <div className="absolute inset-0 z-0">
-                                {/* Use SmoothImage for better loading UX */}
                                 <SmoothImage
                                     src={slides[current].image!}
                                     alt={slides[current].title}
@@ -118,7 +115,6 @@ const FeatureCarousel = () => {
                             </div>
                         )}
 
-                        {/* Abstract Shapes overlay */}
                         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2 z-0"></div>
                         <div className="absolute bottom-0 left-0 w-64 h-64 bg-black/10 rounded-full blur-3xl transform -translate-x-1/2 translate-y-1/2 z-0"></div>
 
@@ -140,18 +136,10 @@ const FeatureCarousel = () => {
                                 {slides[current].subtitle}
                             </motion.p>
                         </div>
-
-                        {/* Loading Skeleton Indicator */}
-                        {slides[current].isLoading && (
-                            <div className="absolute inset-0 flex items-center justify-center">
-                                <div className="w-10 h-10 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
-                            </div>
-                        )}
                     </motion.div>
                 </AnimatePresence>
             </div>
 
-            {/* Controls */}
             <div className="absolute bottom-6 right-8 flex gap-3 z-20">
                 <button onClick={prevSlide} className="p-2 rounded-full bg-white/20 backdrop-blur-md hover:bg-white/40 text-white transition-all">
                     <ChevronLeft size={20} />

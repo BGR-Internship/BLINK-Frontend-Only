@@ -1,5 +1,8 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import defaultBanner from '../assets/PosterCleanDesk.png';
+
+// --- RUNPOD BACKEND URL ---
+const API_URL = "https://ui9oox4nr5tnfv-3000.proxy.runpod.net";
 
 // Types
 export interface Banner {
@@ -32,9 +35,9 @@ interface AdminContextType {
     siteConfig: SiteConfig;
     updateSiteConfig: (config: Partial<SiteConfig>) => void;
     documents: Document[];
-    addDocument: (doc: Omit<Document, 'id' | 'date'>) => void;
+    addDocument: (doc: Omit<Document, 'id' | 'date' | 'is_active'> & { file?: File }) => void;
     deleteDocument: (id: string) => void;
-    toggleDocumentStatus: (id: string) => void;
+    toggleDocument: (id: string, currentStatus: boolean) => void;
 }
 
 // Default Config
@@ -86,31 +89,82 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
     const [siteConfig, setSiteConfig] = useState<SiteConfig>(defaultSiteConfig);
     const [documents, setDocuments] = useState<Document[]>(initialDocuments);
 
+    useEffect(() => {
+        fetchDocuments();
+    }, []);
+
     const updateSiteConfig = (newConfig: Partial<SiteConfig>) => {
         setSiteConfig(prev => ({ ...prev, ...newConfig }));
     };
 
-    const addDocument = (doc: Omit<Document, 'id' | 'date'>) => {
-        const newDoc: Document = {
-            ...doc,
-            id: Math.random().toString(36).substr(2, 9),
-            date: new Date().toISOString().split('T')[0]
-        };
-        setDocuments(prev => [...prev, newDoc]);
+    const fetchDocuments = async () => {
+        try {
+            // Updated to use RunPod URL
+            const response = await fetch(`${API_URL}/api/documents`);
+            const data = await response.json();
+
+            setDocuments(data.map((doc: any) => ({
+                id: doc.id,
+                title: doc.title,
+                type: doc.title.toLowerCase().includes('sop') ? 'SOP' : 'SKD',
+                division: doc.division,
+                classification: doc.classification || 'Public',
+                date: doc.date || new Date().toISOString().split('T')[0],
+                fileUrl: doc.fileUrl || '#',
+                is_active: doc.is_active
+            })));
+        } catch (error) {
+            console.error("Failed to fetch documents:", error);
+            setDocuments(initialDocuments);
+        }
+    };
+
+    const addDocument = async (doc: Omit<Document, 'id' | 'date' | 'is_active'> & { file?: File }) => {
+        try {
+            const formData = new FormData();
+            formData.append('title', doc.title);
+            formData.append('division', doc.division);
+            formData.append('classification', doc.classification);
+            if (doc.file) {
+                formData.append('file', doc.file);
+            }
+
+            // Updated to use RunPod URL
+            const response = await fetch(`${API_URL}/api/documents`, {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (response.ok) {
+                await fetchDocuments();
+            } else {
+                console.error("Failed to upload");
+            }
+        } catch (e) {
+            console.error("Error uploading:", e);
+        }
     };
 
     const deleteDocument = (id: string) => {
         setDocuments(prev => prev.filter(d => d.id !== id));
     };
 
-    const toggleDocumentStatus = (id: string) => {
-        setDocuments(prev => prev.map(doc =>
-            doc.id === id ? { ...doc, isActive: !doc.isActive } : doc
-        ));
+    const toggleDocument = async (id: string, currentStatus: boolean) => {
+        try {
+            // Updated to use RunPod URL
+            await fetch(`${API_URL}/api/documents/toggle`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, is_active: !currentStatus })
+            });
+            await fetchDocuments();
+        } catch (e) {
+            console.error("Failed to toggle document:", e);
+        }
     };
 
     return (
-        <AdminContext.Provider value={{ siteConfig, updateSiteConfig, documents, addDocument, deleteDocument, toggleDocumentStatus }}>
+        <AdminContext.Provider value={{ siteConfig, updateSiteConfig, documents, addDocument, deleteDocument, toggleDocument }}>
             {children}
         </AdminContext.Provider>
     );

@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Send, Maximize2, Minimize2, Sparkles, MessageSquare } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import clsx from 'clsx';
 import BilaLogo from '../assets/bila-ai.png';
 
@@ -10,6 +12,9 @@ interface Message {
     sender: 'user' | 'bot';
     timestamp: Date;
 }
+
+// --- RUNPOD BACKEND URL ---
+const API_URL = "https://ui9oox4nr5tnfv-3000.proxy.runpod.net";
 
 const Chatbot = () => {
     const [isOpen, setIsOpen] = useState(false);
@@ -60,29 +65,24 @@ const Chatbot = () => {
         setIsLoading(true);
 
         try {
-            // Updated to use Environment Variable for RunPod/Production support
-            // const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-            const response = await fetch('https://1h7qjy16egn2uv-3000.proxy.runpod.net/api/chat', {
+            // Updated to use RunPod URL
+            const response = await fetch(`${API_URL}/api/chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     message: newUserMessage.text,
-                    model: "gemma3:4b"
+                    division: "General"
                 }),
             });
 
             const data = await response.json();
 
             if (!response.ok) {
-                console.error('Chat API Error:', response.status, response.statusText);
-                throw new Error(data.error || `Gagal mendapatkan respons (Status: ${response.status})`);
+                throw new Error(data.error || 'Gagal mendapatkan respons');
             }
 
-            // Python API returns 'answer', Node middleware returned 'reply'.
-            // supporting both for safety.
-            const fullText = data.answer || data.reply || "Maaf, saya tidak mendapatkan respons.";
+            const fullText = data.reply || "Maaf, saya tidak mendapatkan respons.";
 
-            // Create a bot message with empty text first
             const botMessageId = (Date.now() + 1).toString();
             const botMessage: Message = {
                 id: botMessageId,
@@ -92,7 +92,7 @@ const Chatbot = () => {
             };
 
             setMessages(prev => [...prev, botMessage]);
-            setIsLoading(false); // Stop "typing" indicator before streaming starts
+            setIsLoading(false);
 
             // Streaming Effect
             let currentText = "";
@@ -109,7 +109,7 @@ const Chatbot = () => {
                 } else {
                     clearInterval(streamInterval);
                 }
-            }, 50); // Speed of streaming
+            }, 50);
 
         } catch (error) {
             console.error('Chat error:', error);
@@ -124,18 +124,10 @@ const Chatbot = () => {
         }
     };
 
-    const formatMessage = (text: string) => {
-        return text.split(/(\*\*.*?\*\*)/g).map((part, index) => {
-            if (part.startsWith('**') && part.endsWith('**')) {
-                return <strong key={index} className="font-bold text-teal-700 dark:text-teal-300">{part.slice(2, -2)}</strong>;
-            }
-            return <span key={index}>{part}</span>;
-        });
-    };
+
 
     return (
         <>
-            {/* Toggle Button */}
             <AnimatePresence>
                 {!isOpen && (
                     <motion.button
@@ -155,7 +147,6 @@ const Chatbot = () => {
                                 className="w-full h-full object-cover"
                             />
                         </div>
-                        {/* Status Indicator */}
                         <span className="absolute top-0 right-0 flex h-4 w-4">
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                             <span className="relative inline-flex rounded-full h-4 w-4 bg-emerald-500 border-2 border-white"></span>
@@ -164,7 +155,6 @@ const Chatbot = () => {
                 )}
             </AnimatePresence>
 
-            {/* Chat Window */}
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
@@ -182,7 +172,6 @@ const Chatbot = () => {
                                 : "bottom-4 left-4 right-4 h-[500px] sm:left-auto sm:right-6 sm:bottom-6 sm:w-96 sm:h-[550px] rounded-3xl bg-white/90 dark:bg-slate-900/90"
                         )}
                     >
-                        {/* Header */}
                         <div className="relative bg-teal-50 dark:bg-slate-800 p-4 flex items-center justify-between border-b border-teal-100 dark:border-slate-700">
                             <div className="flex items-center gap-3">
                                 <div className="relative">
@@ -222,7 +211,6 @@ const Chatbot = () => {
                             </div>
                         </div>
 
-                        {/* Messages Area */}
                         <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700">
                             <div className="flex justify-center my-2">
                                 <span className="text-[10px] font-medium text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">
@@ -241,7 +229,6 @@ const Chatbot = () => {
                                     )}
                                 >
                                     <div className={clsx("flex max-w-[85%] gap-2", msg.sender === 'user' ? "flex-row-reverse" : "flex-row")}>
-                                        {/* Avatar for Bot */}
                                         {msg.sender === 'bot' && (
                                             <div className="w-8 h-8 rounded-full bg-teal-50 p-0.5 mt-auto flex-shrink-0 border border-teal-100">
                                                 <img src={BilaLogo} className="w-full h-full rounded-full object-cover bg-white" alt="Bila" />
@@ -257,7 +244,25 @@ const Chatbot = () => {
                                             )}
                                         >
                                             <div className="font-normal">
-                                                {msg.text ? formatMessage(msg.text) : (msg.sender === 'bot' && !isLoading ? <span className="italic opacity-50">Mengetik...</span> : null)}
+                                                <div className="font-normal markdown-content">
+                                                    {msg.sender === 'bot' ? (
+                                                        msg.text || (!isLoading ? "" : <span className="italic opacity-50">Mengetik...</span>) ? (
+                                                            <ReactMarkdown
+                                                                remarkPlugins={[remarkGfm]}
+                                                                components={{
+                                                                    ul: ({ node, ...props }) => <ul className="list-disc pl-4 my-2" {...props} />,
+                                                                    ol: ({ node, ...props }) => <ol className="list-decimal pl-4 my-2" {...props} />,
+                                                                    p: ({ node, ...props }) => <p className="mb-[2px] last:mb-0 leading-tight" {...props} />,
+                                                                    strong: ({ node, ...props }) => <span className="font-bold text-teal-600 dark:text-teal-400" {...props} />
+                                                                }}
+                                                            >
+                                                                {msg.text}
+                                                            </ReactMarkdown>
+                                                        ) : <span className="italic opacity-50">Mengetik...</span>
+                                                    ) : (
+                                                        msg.text
+                                                    )}
+                                                </div>
                                             </div>
                                             <span className={clsx(
                                                 "text-[10px] mt-2 block opacity-60 font-medium text-right uppercase tracking-tighter",
@@ -305,7 +310,6 @@ const Chatbot = () => {
                             <div ref={messagesEndRef} />
                         </div>
 
-                        {/* Input Area */}
                         <div className="p-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-t border-slate-100 dark:border-slate-800">
                             <form
                                 onSubmit={handleSendMessage}

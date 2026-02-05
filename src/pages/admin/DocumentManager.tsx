@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import ConfirmModal from '../../components/ui/ConfirmModal';
 
 const DocumentManager = () => {
-    const { documents, addDocument, deleteDocument, toggleDocumentStatus } = useAdmin();
+    const { documents, addDocument, deleteDocument, toggleDocument } = useAdmin();
     const [isFormOpen, setIsFormOpen] = useState(false);
 
     // Modal States
@@ -303,7 +303,8 @@ const DocumentManager = () => {
                     isOpen={!!toggleId}
                     onClose={() => setToggleId(null)}
                     onConfirm={() => {
-                        if (toggleId) toggleDocumentStatus(toggleId);
+                        const doc = documents.find(d => d.id === toggleId);
+                        if (doc) toggleDocument(doc.id, doc.isActive);
                     }}
                     title={documents.find(d => d.id === toggleId)?.isActive ? "Deactivate Document?" : "Activate Document?"}
                     message={
