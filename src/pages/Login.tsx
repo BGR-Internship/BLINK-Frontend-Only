@@ -4,6 +4,8 @@ import { Eye, EyeOff, RefreshCw, Code2, Shield, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import logo from '../assets/BGR_logo.png';
 
+const API_URL = "https://34896ba195465a.lhr.life";
+
 const Login = () => {
     const navigate = useNavigate();
     const [showPassword, setShowPassword] = useState(false);
@@ -31,7 +33,8 @@ const Login = () => {
         setErrorMsg("");
 
         try {
-            const response = await fetch('http://localhost:5000/api/login', {
+            console.log(`Attempting login to: ${API_URL}/login`);
+            const response = await fetch(`${API_URL}/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -43,6 +46,7 @@ const Login = () => {
             const data = await response.json();
 
             if (response.ok) {
+                console.log("Login Success!");
                 localStorage.setItem('blink_token', data.token);
                 localStorage.setItem('blink_user', JSON.stringify(data.user));
                 navigate('/');
