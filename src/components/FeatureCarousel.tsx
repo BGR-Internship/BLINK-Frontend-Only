@@ -6,16 +6,43 @@ import SmoothImage from './ui/SmoothImage';
 
 const FeatureCarousel = () => {
 
+
+    const gradients = [
+        "from-blue-600 to-indigo-600",
+        "from-purple-600 to-pink-600",
+        "from-orange-500 to-red-500",
+        "from-emerald-500 to-teal-600",
+        "from-slate-700 to-slate-900",
+        "from-cyan-600 to-blue-600",
+        "from-rose-500 to-orange-500",
+        "from-indigo-600 to-purple-800"
+    ];
+
+    const getGradientFromId = (id: string) => {
+        let hash = 0;
+        for (let i = 0; i < id.length; i++) {
+            hash = id.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        const index = Math.abs(hash) % gradients.length;
+        return gradients[index];
+    };
+
     const { siteConfig } = useAdmin();
     const [current, setCurrent] = useState(0);
 
-    const slides = siteConfig.heroBanners && siteConfig.heroBanners.length > 0 ? siteConfig.heroBanners : [{
-        id: 'fallback-1',
-        title: "Welcome to Dashboard",
-        subtitle: "No active banner found.",
-        image: "",
-        color: "from-slate-700 to-slate-900"
-    }];
+    const slides = siteConfig.heroBanners && siteConfig.heroBanners.length > 0
+        ? siteConfig.heroBanners.map(banner => ({
+            ...banner,
+            // If image is uploaded: use random gradient. If no image: use user-selected color (or default)
+            color: banner.image ? getGradientFromId(banner.id) : (banner.color || "from-slate-700 to-slate-900")
+        }))
+        : [{
+            id: 'fallback-1',
+            title: "Welcome to Dashboard",
+            subtitle: "No active banner found.",
+            image: "",
+            color: "from-slate-700 to-slate-900"
+        }];
 
     useEffect(() => {
         const timer = setInterval(() => {
