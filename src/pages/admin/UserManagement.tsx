@@ -11,7 +11,7 @@ const MOCK_USERS: User[] = [
     { id: '1', name: 'Super Admin', email: 'superadmin@blink.id', role: 'super_admin', division: 'IT Development' },
     { id: '2', name: 'Admin User', email: 'admin@blink.id', role: 'admin', division: 'Human Capital' },
     { id: '3', name: 'Regular User', email: 'user@blink.id', role: 'user', division: 'Logistics' },
-    { id: '4', name: 'Rafi Zandrapribumi', email: 'BABI@blink.id', role: 'admin', division: 'Finance' },
+    { id: '4', name: 'Rafi Zandrapribumi', email: 'zandra@upnvyk.id', role: 'admin', division: 'Finance' },
     { id: '5', name: 'Siti Aminah', email: 'siti@blink.id', role: 'admin', division: 'General Affair' },
 ];
 
