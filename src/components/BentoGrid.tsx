@@ -313,13 +313,13 @@ const BentoGrid = () => {
                     <p className="text-sm text-slate-500 dark:text-slate-400">Akses cepat sistem perusahaan</p>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="w-full md:w-auto flex flex-col sm:flex-row sm:items-center gap-3">
                     {isSuperAdmin && (
                         <>
                             <button
                                 onClick={() => setIsEditing(!isEditing)}
                                 className={clsx(
-                                    "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all",
+                                    "flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all",
                                     isEditing
                                         ? "bg-primary text-white shadow-lg shadow-primary/20"
                                         : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700"
@@ -332,7 +332,7 @@ const BentoGrid = () => {
                             {isEditing && (
                                 <button
                                     onClick={handleReset}
-                                    className="p-2 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors"
+                                    className="p-2 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors flex items-center justify-center"
                                     title="Reset Layout"
                                 >
                                     <X size={18} />
@@ -341,19 +341,31 @@ const BentoGrid = () => {
                         </>
                     )}
 
-                    <div className="relative w-full md:w-64 hidden sm:block">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <div className="relative w-full md:w-72 group transition-all duration-300">
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors duration-300 pointer-events-none">
+                            <Search size={18} />
+                        </div>
                         <input
                             type="text"
-                            placeholder="Cari layanan..."
+                            placeholder="Cari layanan atau aplikasi..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             disabled={isEditing}
                             className={clsx(
-                                "w-full pl-10 pr-4 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm placeholder:text-slate-400 text-slate-700 dark:text-slate-200 transition-all shadow-sm",
-                                isEditing && "opacity-50 cursor-not-allowed"
+                                "w-full pl-10 pr-10 py-2.5 rounded-2xl bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 outline-none text-sm placeholder:text-slate-400 text-slate-700 dark:text-slate-200 transition-all duration-300",
+                                "shadow-sm hover:shadow-md focus:shadow-lg focus:border-primary/50 focus:ring-4 focus:ring-primary/10",
+                                isEditing && "opacity-50 cursor-not-allowed bg-slate-50 dark:bg-slate-900"
                             )}
                         />
+                        {searchQuery && (
+                            <button
+                                onClick={() => setSearchQuery('')}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-all"
+                                title="Hapus pencarian"
+                            >
+                                <X size={14} />
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>

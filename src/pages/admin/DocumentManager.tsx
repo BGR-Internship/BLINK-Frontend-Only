@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAdmin } from '../../context/AdminContext';
-import { Trash2, FileText, Upload, Plus, Minus, Eye, Power, CheckCircle, XCircle } from 'lucide-react';
+import { Trash2, FileText, Upload, Plus, Minus, Eye, Power, CheckCircle, XCircle, Search } from 'lucide-react';
 import clsx from 'clsx';
 import { motion, AnimatePresence } from 'framer-motion';
 import ConfirmModal from '../../components/ui/ConfirmModal';
@@ -19,6 +19,31 @@ const DocumentManager = () => {
     const [division, setDivision] = useState('Finance');
     const [docType, setDocType] = useState<'SKD' | 'SOP'>('SKD');
     const [classification, setClassification] = useState<'Public' | 'Private'>('Public');
+    // Filter State
+    const [filterDivision, setFilterDivision] = useState('All');
+    const [filterType, setFilterType] = useState('All');
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
+    const [searchTerm, setSearchTerm] = useState('');
+
+    // Filter Logic
+    const filteredDocuments = documents.filter(doc => {
+        const matchesDivision = filterDivision === 'All' || doc.division === filterDivision;
+        const matchesType = filterType === 'All' || doc.type === filterType;
+
+        let matchesDate = true;
+        if (startDate && endDate) {
+            matchesDate = doc.date >= startDate && doc.date <= endDate;
+        } else if (startDate) {
+            matchesDate = doc.date >= startDate;
+        } else if (endDate) {
+            matchesDate = doc.date <= endDate;
+        }
+
+        const matchesSearch = doc.title.toLowerCase().includes(searchTerm.toLowerCase());
+
+        return matchesDivision && matchesType && matchesDate && matchesSearch;
+    });
 
     const handleUpload = (e: React.FormEvent) => {
         e.preventDefault();
@@ -37,7 +62,7 @@ const DocumentManager = () => {
         setIsFormOpen(false);
         setShowSuccessModal(true);
 
-        // Reset (except title for a moment if we want to use it? No, generic message is fine)
+        // Reset
         setTitle('');
         setDivision('Finance');
         setDocType('SKD');
@@ -52,8 +77,8 @@ const DocumentManager = () => {
     };
 
     return (
-        <div className="space-y-8">
-            <header className="flex items-center justify-between">
+        <div className="space-y-6">
+            <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-bold text-slate-800 dark:text-white">Manajemen Dokumen</h1>
                     <p className="text-slate-500 dark:text-slate-400 mt-2">Unggah dan kelola dokumen divisi</p>
@@ -61,18 +86,18 @@ const DocumentManager = () => {
                 <button
                     onClick={() => setIsFormOpen(!isFormOpen)}
                     className={clsx(
-                        "flex items-center gap-2 px-4 py-2 text-white rounded-xl transition-colors shadow-lg",
+                        "flex items-center gap-2 px-4 py-2 text-white rounded-xl transition-colors shadow-lg self-start md:self-auto",
                         isFormOpen
                             ? "bg-secondary hover:bg-orange-600 shadow-orange-500/20"
                             : "bg-primary hover:bg-teal-600 shadow-primary/20"
                     )}
                 >
                     {isFormOpen ? <Minus size={20} /> : <Plus size={20} />}
-                    <span>{isFormOpen ? "Unggah Dokumen" : "Unggah Dokumen"}</span>
+                    <span>{isFormOpen ? "Tutup Form" : "Unggah Dokumen"}</span>
                 </button>
             </header>
 
-            {/* Upload Form */}
+            {/* Upload Form - Moved to Top */}
             <AnimatePresence>
                 {isFormOpen && (
                     <motion.div
@@ -81,7 +106,7 @@ const DocumentManager = () => {
                         exit={{ height: 0, opacity: 0 }}
                         className="overflow-hidden"
                     >
-                        <form onSubmit={handleUpload} className="bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-sm border border-slate-100 dark:border-slate-700 mb-8 space-y-6">
+                        <form onSubmit={handleUpload} className="bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-sm border border-slate-100 dark:border-slate-700 space-y-6">
                             <h2 className="text-xl font-bold text-slate-800 dark:text-white border-b border-slate-100 dark:border-slate-700 pb-4">Dokumen Baru</h2>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -170,8 +195,91 @@ const DocumentManager = () => {
                 )}
             </AnimatePresence>
 
-            {/* Document List */}
+            {/* Unified Card: Filter + Table */}
             <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+
+                {/* Filter Section (Embedded) */}
+                <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex flex-wrap gap-4 items-end bg-slate-50/50 dark:bg-slate-800/50">
+                    <div className="flex-1 min-w-[300px]">
+                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Cari Dokumen</label>
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                            <input
+                                type="text"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                placeholder="Cari nama dokumen..."
+                                className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="flex-1 min-w-[150px]">
+                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Tipe</label>
+                        <select
+                            value={filterType}
+                            onChange={(e) => setFilterType(e.target.value)}
+                            className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        >
+                            <option value="All">Semua Tipe</option>
+                            <option value="SKD">SKD</option>
+                            <option value="SOP">SOP</option>
+                        </select>
+                    </div>
+
+                    <div className="flex-1 min-w-[200px]">
+                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Divisi</label>
+                        <select
+                            value={filterDivision}
+                            onChange={(e) => setFilterDivision(e.target.value)}
+                            className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        >
+                            <option value="All">Semua Divisi</option>
+                            <option value="Finance">Finance</option>
+                            <option value="HR">Human Resources</option>
+                            <option value="IT">IT & Tech</option>
+                            <option value="Legal">Legal</option>
+                            <option value="Operations">Operations</option>
+                        </select>
+                    </div>
+
+                    <div className="flex-1 min-w-[150px]">
+                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Dari Tanggal</label>
+                        <input
+                            type="date"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                            className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        />
+                    </div>
+
+                    <div className="flex-1 min-w-[150px]">
+                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Sampai Tanggal</label>
+                        <input
+                            type="date"
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                            className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        />
+                    </div>
+
+                    {(filterDivision !== 'All' || filterType !== 'All' || startDate || endDate || searchTerm) && (
+                        <button
+                            onClick={() => {
+                                setFilterDivision('All');
+                                setFilterType('All');
+                                setStartDate('');
+                                setEndDate('');
+                                setSearchTerm('');
+                            }}
+                            className="px-4 py-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors font-medium text-sm h-[42px]"
+                        >
+                            Reset
+                        </button>
+                    )}
+                </div>
+
+                {/* Document Table */}
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
                         <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-700">
@@ -186,7 +294,7 @@ const DocumentManager = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50 dark:divide-slate-700">
-                            {documents.map((doc) => (
+                            {filteredDocuments.map((doc) => (
                                 <tr key={doc.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-700/50 transition-colors">
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">
@@ -262,7 +370,7 @@ const DocumentManager = () => {
                             ))}
                             {documents.length === 0 && (
                                 <tr>
-                                    <td colSpan={5} className="px-6 py-12 text-center text-slate-400">
+                                    <td colSpan={7} className="px-6 py-12 text-center text-slate-400">
                                         <div className="flex flex-col items-center">
                                             <FileText size={48} className="mb-4 opacity-20" />
                                             <p>Tidak ada dokumen ditemukan</p>

@@ -6,8 +6,10 @@ import { Trash2, Plus, Image as ImageIcon, Save, Edit2, X } from 'lucide-react';
 
 import { motion, AnimatePresence } from 'framer-motion';
 
+import ConfirmModal from '../../components/ui/ConfirmModal';
+
 const SiteConfig = () => {
-    const { siteConfig, updateSiteConfig } = useAdmin();
+    const { siteConfig, updateSiteConfig, refreshConfig: refreshGlobal } = useAdmin();
 
     // Local state for "Draft" mode
     const [draftConfig, setDraftConfig] = useState<SiteConfigType>(siteConfig);
@@ -17,7 +19,6 @@ const SiteConfig = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [editingType, setEditingType] = useState<'hero' | 'popup'>('hero'); // Track what we are editing
     const [editingId, setEditingId] = useState<string | null>(null);
-    const [isUploading, setIsUploading] = useState(false);
     const [tempBanner, setTempBanner] = useState<Banner>({
         id: '',
         title: '',
@@ -30,13 +31,21 @@ const SiteConfig = () => {
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [dbBanners, setDbBanners] = useState<any[]>([]);
     const [uploadMode, setUploadMode] = useState<'file' | 'url'>('file');
+    const [isUploading, setIsUploading] = useState(false);
 
-    // --- POPUP DB STATE (MySQL) ---
+    // --- POPUP DB STATE (MySQL/JSON) ---
     const [dbPopups, setDbPopups] = useState<any[]>([]);
     const [popupFile, setPopupFile] = useState<File | null>(null);
     const [popupUrl, setPopupUrl] = useState('');
     const [popupUploadMode, setPopupUploadMode] = useState<'file' | 'url'>('file');
     const [isUploadingPopup, setIsUploadingPopup] = useState(false);
+
+    // --- MODALS STATE ---
+    const [deleteBannerId, setDeleteBannerId] = useState<string | null>(null);
+    const [deletePopupId, setDeletePopupId] = useState<string | null>(null);
+    const [successModal, setSuccessModal] = useState<{ isOpen: boolean; title: string; message: string }>({ isOpen: false, title: '', message: '' });
+    const [errorModal, setErrorModal] = useState<{ isOpen: boolean; message: string }>({ isOpen: false, message: '' });
+
 
     // Initial Fetch of Current Banner
     useEffect(() => {
@@ -55,9 +64,9 @@ const SiteConfig = () => {
             const res = await fetch('http://localhost:3000/api/banner');
             const data = await res.json();
             if (Array.isArray(data)) {
-                setDbBanners(data);
-            } else if (data && data.image_path) {
-                setDbBanners([data]);
+                setDbBanners(data.map((b: any) => ({ ...b, image: b.image_path || b.image })));
+            } else if (data && (data.image_path || data.image)) {
+                setDbBanners([{ ...data, image: data.image_path || data.image }]);
             } else {
                 setDbBanners([]);
             }
@@ -66,19 +75,26 @@ const SiteConfig = () => {
         }
     };
 
-    const handleDeleteDbBanner = async (id: string) => {
-        if (!confirm("Hapus banner ini?")) return;
+    const handleDeleteDbBanner = (id: string) => {
+        setDeleteBannerId(id);
+    };
+
+    const executeDeleteDbBanner = async () => {
+        if (!deleteBannerId) return;
         try {
-            const res = await fetch(`http://localhost:3000/api/banner/${id}`, {
+            const res = await fetch(`http://localhost:3000/api/banner/${deleteBannerId}`, {
                 method: 'DELETE'
             });
             if (res.ok) {
                 fetchCurrentBanner();
+                refreshGlobal();
+                setDeleteBannerId(null); // Close modal
             } else {
-                alert("Gagal menghapus banner");
+                setErrorModal({ isOpen: true, message: "Gagal menghapus banner" });
             }
         } catch (e) {
             console.error(e);
+            setErrorModal({ isOpen: true, message: "Error deleting banner" });
         }
     };
 
@@ -97,16 +113,16 @@ const SiteConfig = () => {
         try {
             const res = await fetch('http://localhost:3000/api/popups');
             const data = await res.json();
-            setDbPopups(Array.isArray(data) ? data : []);
+            const mappedData = Array.isArray(data) ? data.map((p: any) => ({ ...p, image: p.image_path || p.image })) : [];
+            setDbPopups(mappedData);
         } catch (err) {
             console.error("Failed to fetch popups", err);
         }
     };
 
-    // --- Banner CRUD Helpers ---
     const handlePopupUpload = async () => {
-        if (popupUploadMode === 'file' && !popupFile) return alert("Pilih file gambar dulu!");
-        if (popupUploadMode === 'url' && !popupUrl) return alert("Masukan URL gambar!");
+        if (popupUploadMode === 'file' && !popupFile) return setErrorModal({ isOpen: true, message: "Pilih file gambar dulu!" });
+        if (popupUploadMode === 'url' && !popupUrl) return setErrorModal({ isOpen: true, message: "Masukan URL gambar!" });
 
         setIsUploadingPopup(true);
         try {
@@ -128,40 +144,48 @@ const SiteConfig = () => {
 
             const data = await res.json();
             if (data.success) {
-                alert("Popup berhasil ditambahkan");
+                setSuccessModal({ isOpen: true, title: "Popup Berhasil", message: "Popup berhasil ditambahkan ke database." });
                 fetchPopups();
+                refreshGlobal();
                 setPopupFile(null);
                 setPopupUrl('');
             } else {
-                alert("Gagal upload: " + (data.error || 'Unknown error'));
+                setErrorModal({ isOpen: true, message: "Gagal upload: " + (data.error || 'Unknown error') });
             }
-        } catch (e) {
+        } catch (e: any) {
             console.error(e);
-            alert("Error upload popup");
+            setErrorModal({ isOpen: true, message: "Error upload popup" });
         } finally {
             setIsUploadingPopup(false);
         }
     };
 
-    const handleDeletePopup = async (id: string) => {
-        if (!confirm("Hapus popup ini?")) return;
+    const handleDeletePopup = (id: string) => {
+        setDeletePopupId(id);
+    };
+
+    const executeDeletePopup = async () => {
+        if (!deletePopupId) return;
         try {
-            const res = await fetch(`http://localhost:3000/api/popups/${id}`, {
+            const res = await fetch(`http://localhost:3000/api/popups/${deletePopupId}`, {
                 method: 'DELETE'
             });
             if (res.ok) {
                 fetchPopups();
+                refreshGlobal();
+                setDeletePopupId(null);
             } else {
-                alert("Gagal menghapus popup");
+                setErrorModal({ isOpen: true, message: "Gagal menghapus popup" });
             }
         } catch (e) {
             console.error(e);
+            setErrorModal({ isOpen: true, message: "Error deleting popup" });
         }
     };
 
     const handleBannerDbUpload = async () => {
-        if (uploadMode === 'file' && !selectedFile) return alert("Pilih file gambar dulu!");
-        if (uploadMode === 'url' && !tempBanner.image) return alert("Masukan URL gambar!");
+        if (uploadMode === 'file' && !selectedFile) return setErrorModal({ isOpen: true, message: "Pilih file gambar dulu!" });
+        if (uploadMode === 'url' && !tempBanner.image) return setErrorModal({ isOpen: true, message: "Masukan URL gambar!" });
 
         setIsUploading(true); // Loading
 
@@ -192,8 +216,9 @@ const SiteConfig = () => {
 
             const data = await res.json();
             if (data.success) {
-                alert("Banner berhasil ditambahkan");
+                setSuccessModal({ isOpen: true, title: "Banner Berhasil", message: "Banner baru telah berhasil ditambahkan." });
                 fetchCurrentBanner();
+                refreshGlobal();
                 setSelectedFile(null);
                 setTempBanner({
                     id: '',
@@ -203,11 +228,11 @@ const SiteConfig = () => {
                     color: 'from-slate-700 to-slate-900'
                 });
             } else {
-                alert("Gagal upload: " + (data.error || 'Unknown error'));
+                setErrorModal({ isOpen: true, message: "Gagal upload: " + (data.error || 'Unknown error') });
             }
-        } catch (e) {
+        } catch (e: any) {
             console.error(e);
-            alert("Error upload");
+            setErrorModal({ isOpen: true, message: "Error upload: " + e.message });
         } finally {
             setIsUploading(false);
         }
@@ -216,7 +241,11 @@ const SiteConfig = () => {
     const handleSaveAll = () => {
         updateSiteConfig(draftConfig);
         setIsDirty(false);
-        alert("Perubahan berhasil disimpan!");
+        setSuccessModal({
+            isOpen: true,
+            title: "Berhasil Disimpan",
+            message: "Perubahan konfigurasi situs telah berhasil disimpan ke sistem."
+        });
     };
 
     // --- Banner CRUD Helpers ---
@@ -244,17 +273,7 @@ const SiteConfig = () => {
         setIsEditing(true);
     };
 
-    const handleDelete = (id: string, type: 'hero' | 'popup') => {
-        if (confirm("Hapus item ini?")) {
-            setDraftConfig(prev => {
-                const listKey = type === 'hero' ? 'heroBanners' : 'popupBanners';
-                const currentList = prev[listKey] || [];
-                const newList = currentList.filter(b => b.id !== id);
-                return { ...prev, [listKey]: newList };
-            });
-            setIsDirty(true);
-        }
-    };
+
 
     const saveTempBanner = () => {
         setDraftConfig(prev => {
@@ -617,6 +636,50 @@ const SiteConfig = () => {
                 </AnimatePresence>
 
             </div>
+
+            {/* Delete Banner Configuration Modal */}
+            <ConfirmModal
+                isOpen={!!deleteBannerId}
+                onClose={() => setDeleteBannerId(null)}
+                onConfirm={executeDeleteDbBanner}
+                title="Hapus Banner?"
+                message="Apakah Anda yakin ingin menghapus banner ini? Tindakan ini tidak dapat dibatalkan."
+                confirmText="Hapus"
+                variant="danger"
+            />
+
+            {/* Delete Popup Configuration Modal */}
+            <ConfirmModal
+                isOpen={!!deletePopupId}
+                onClose={() => setDeletePopupId(null)}
+                onConfirm={executeDeletePopup}
+                title="Hapus Popup?"
+                message="Apakah Anda yakin ingin menghapus popup ini? Tindakan ini tidak dapat dibatalkan."
+                confirmText="Hapus"
+                variant="danger"
+            />
+
+            {/* Success Modal */}
+            <ConfirmModal
+                isOpen={successModal.isOpen}
+                onClose={() => setSuccessModal({ ...successModal, isOpen: false })}
+                onConfirm={() => setSuccessModal({ ...successModal, isOpen: false })}
+                title={successModal.title || "Berhasil"}
+                message={successModal.message}
+                confirmText="OK" // Generic OK
+                variant="success"
+            />
+
+            {/* Error Modal */}
+            <ConfirmModal
+                isOpen={errorModal.isOpen}
+                onClose={() => setErrorModal({ ...errorModal, isOpen: false })}
+                onConfirm={() => setErrorModal({ ...errorModal, isOpen: false })}
+                title="Gagal"
+                message={errorModal.message}
+                confirmText="OK"
+                variant="danger"
+            />
         </div>
     );
 };

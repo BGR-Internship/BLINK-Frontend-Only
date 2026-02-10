@@ -1,291 +1,244 @@
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
-const mysql = require('mysql2/promise');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 const fs = require('fs');
 const path = require('path');
-const pdf = require('pdf-parse');
-const { spawn } = require('child_process');
-require('dotenv').config({ path: path.join(__dirname, '../.env') });
+const multer = require('multer');
+const pdf = require('pdf-parse'); // Kept for RAG (future use)
 
 const app = express();
-const PORT = 5000;
+const PORT = 3000; // Changed to 3000 as requested
 
-// Database Connection Pool
-// Database Connection Pool
-const pool = mysql.createPool({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASS,
-    database: process.env.DB_NAME,
-    port: process.env.DB_PORT || 3306,
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
+// --- FOLDER SETUP ---
+const uploadDir = path.join(__dirname, 'uploads');
+const dataDir = path.join(__dirname, 'data');
+const dbFile = path.join(dataDir, 'db.json');
+
+if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
+if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir);
+
+// Initialize JSON DB if not exists
+if (!fs.existsSync(dbFile)) {
+    const initialData = {
+        banners: [],
+        popups: [],
+        settings: { popup_active: true },
+        documents: [
+            { id: '1', title: 'Q1 Financial Report', type: 'SKD', division: 'Finance', classification: 'Private', date: '2024-03-01', fileUrl: '#', isActive: true },
+            { id: '2', title: 'Employee Handbook 2024', type: 'SOP', division: 'HR', classification: 'Public', date: '2024-01-15', fileUrl: '#', isActive: true },
+        ]
+    };
+    fs.writeFileSync(dbFile, JSON.stringify(initialData, null, 2));
+}
+
+// --- HELPERS ---
+function readDb() {
+    return JSON.parse(fs.readFileSync(dbFile, 'utf8'));
+}
+
+function writeDb(data) {
+    fs.writeFileSync(dbFile, JSON.stringify(data, null, 2));
+}
+
+// --- MULTER SETUP ---
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, uploadDir);
+    },
+    filename: function (req, file, cb) {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, uniqueSuffix + path.extname(file.originalname));
+    }
 });
+const upload = multer({ storage: storage });
 
 app.use(cors());
 app.use(express.json());
+app.use('/uploads', express.static(uploadDir));
 
-// --- RAG (Retrieval Augmented Generation) SETUP ---
-let knowledgeBase = [];
-
-async function loadPDFs() {
-    const pdfDir = path.join(__dirname, '../src/assets/pdf');
-    const files = ['002_Surat Undangan Foto Nawasena.pdf', '13.1.13 Pembangunan Sistem Informasi.pdf'];
-
-    console.log('Loading PDFs for RAG...');
-
-    for (const fileName of files) {
-        const filePath = path.join(pdfDir, fileName);
-        if (fs.existsSync(filePath)) {
-            try {
-                console.log(`Processing ${fileName}...`);
-                const dataBuffer = fs.readFileSync(filePath);
-
-                // 1. Try standard text extraction
-                let data = await pdf(dataBuffer);
-                let text = data.text;
-
-                // 2. If text is likely scanned (< 100 chars), use Python OCR Service
-                if (text.trim().length < 100) {
-                    console.log(`[OCR] ${fileName} seems to be scanned. Starting PaddleOCR Service...`);
-
-                    text = await new Promise((resolve, reject) => {
-                        // BEST PRACTICE: Use absolute path for the script to ensure it works from any CWD
-                        const pythonScriptPath = path.join(__dirname, 'ocr_service.py');
-                        const pythonProcess = spawn('python', [pythonScriptPath, filePath]);
-                        let outputData = "";
-                        let errorData = "";
-
-                        pythonProcess.stdout.on('data', (data) => {
-                            outputData += data.toString();
-                        });
-
-                        pythonProcess.stderr.on('data', (data) => {
-                            errorData += data.toString();
-                            // Optional: pipe stderr to console to see progress
-                            process.stdout.write(`[Python] ${data.toString()}`);
-                        });
-
-                        pythonProcess.on('close', (code) => {
-                            if (code !== 0) {
-                                console.error(`[OCR] Python script exited with code ${code}`);
-                                resolve(" [OCR Failed] ");
-                            } else {
-                                try {
-                                    const result = JSON.parse(outputData);
-                                    if (result.status === 'success') {
-                                        resolve(result.text);
-                                    } else {
-                                        console.error('[OCR] Error:', result.message);
-                                        resolve(" [OCR Error] ");
-                                    }
-                                } catch (e) {
-                                    console.error('[OCR] Failed to parse JSON output');
-                                    resolve(" [OCR Output Invalid] ");
-                                }
-                            }
-                        });
-                    });
-
-                    console.log(`[OCR] Finished ${fileName}. Extracted ${text.length} characters.`);
-                }
-
-                // Chunking
-                const chunks = text.split('\n\n').filter(c => c.trim().length > 50);
-
-                chunks.forEach(chunk => {
-                    knowledgeBase.push({
-                        text: chunk.trim(),
-                        source: fileName
-                    });
-                });
-                console.log(`Loaded ${chunks.length} chunks from ${fileName}`);
-            } catch (err) {
-                console.error(`Error parsing ${fileName}:`, err.message);
-            }
-        } else {
-            console.warn(`File not found: ${filePath}`);
-        }
-    }
-}
-
-function findRelevantContext(query) {
-    const keywords = query.toLowerCase().split(' ').filter(word => word.length > 3);
-    if (keywords.length === 0) return "";
-
-    // Simple keyword matching score
-    const scoredChunks = knowledgeBase.map(item => {
-        let score = 0;
-        const lowText = item.text.toLowerCase();
-        keywords.forEach(word => {
-            if (lowText.includes(word)) score++;
-        });
-        return { ...item, score };
-    });
-
-    // Get top 3 chunks with score > 0
-    return scoredChunks
-        .filter(item => item.score > 0)
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 3)
-        .map(item => `[Source: ${item.source}]: ${item.text}`)
-        .join('\n\n');
-}
 
 // --- API ROUTES ---
 
-// Login Endpoint
-app.post('/api/login', async (req, res) => {
-    const { nik, password } = req.body;
-    console.log('Login attempt for NIK:', nik);
+// 1. BANNER CRUD
+app.get('/api/banner', (req, res) => {
+    const db = readDb();
+    res.json(db.banners);
+});
+
+app.post('/api/banner', upload.single('image'), (req, res) => {
     try {
-        const [rows] = await pool.query(
-            'SELECT id_user, nik, user_pass, id_usr_role FROM tbl_user WHERE nik = ? LIMIT 1',
-            [nik]
-        );
-
-        if (rows.length > 0) {
-            const user = rows[0];
-            // Verify password (check bcrypt first, then fallback to plain text)
-            const isBcryptValid = await bcrypt.compare(password, user.user_pass);
-            const isPlainTextValid = !isBcryptValid && password === user.user_pass;
-            const isValid = isBcryptValid || isPlainTextValid;
-
-            if (isValid) {
-                console.log(`Login successful for user: ${nik} [${isBcryptValid ? 'Encrypted' : 'Plain Text'}]`);
-                const { user_pass, ...userWithoutPass } = user;
-
-                // Generate JWT Token
-                const token = jwt.sign(
-                    {
-                        id: userWithoutPass.id_user,
-                        nik: userWithoutPass.nik,
-                        role: userWithoutPass.id_usr_role === 1 ? 'Admin' : 'User'
-                    },
-                    process.env.JWT_SECRET || 'fallback-secret',
-                    { expiresIn: '24h' }
-                );
-
-                return res.json({
-                    message: 'Login successful',
-                    token: token,
-                    user: {
-                        id: userWithoutPass.nik,
-                        nik: userWithoutPass.nik,
-                        role: userWithoutPass.id_usr_role === 1 ? 'Admin' : 'User'
-                    }
-                });
-            } else {
-                console.log('Password invalid');
-            }
-        } else {
-            console.log('User not found');
+        const { title, description, imageUrl } = req.body;
+        let finalImagePath = imageUrl;
+        if (req.file) {
+            finalImagePath = `http://localhost:${PORT}/uploads/${req.file.filename}`;
         }
-        return res.status(401).json({ error: 'Invalid credentials' });
-    } catch (error) {
-        console.error('Login error:', error);
-        res.status(500).json({ error: 'Internal Server Error: ' + error.message });
+
+        if (!finalImagePath) return res.status(400).json({ error: "Image required" });
+
+        const db = readDb();
+        const newBanner = {
+            id: Date.now().toString(),
+            title: title || '',
+            description: description || '',
+            image_path: finalImagePath,
+            created_at: new Date().toISOString()
+        };
+
+        db.banners.push(newBanner);
+        writeDb(db);
+
+        res.json({ success: true, ...newBanner });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
     }
 });
 
-// Services Endpoint
-app.get('/api/services', async (req, res) => {
+app.delete('/api/banner/:id', (req, res) => {
+    const db = readDb();
+    const initialLen = db.banners.length;
+    db.banners = db.banners.filter(b => b.id !== req.params.id);
+
+    if (db.banners.length === initialLen) return res.status(404).json({ error: "Not found" });
+
+    writeDb(db);
+    res.json({ success: true });
+});
+
+
+// 2. POPUPS CRUD
+app.get('/api/popups', (req, res) => {
+    const db = readDb();
+    res.json(db.popups);
+});
+
+app.post('/api/popups', upload.single('image'), (req, res) => {
     try {
-        // Fallback since we don't know the remote schema for services yet
-        res.json([]);
-    } catch (error) {
-        res.status(500).json({ error: 'Failed' });
+        const { imageUrl } = req.body;
+        let finalImagePath = imageUrl;
+        if (req.file) {
+            finalImagePath = `http://localhost:${PORT}/uploads/${req.file.filename}`;
+        }
+
+        if (!finalImagePath) return res.status(400).json({ error: "Image required" });
+
+        const db = readDb();
+        const newPopup = {
+            id: Date.now().toString(),
+            image_path: finalImagePath,
+            created_at: new Date().toISOString()
+        };
+
+        db.popups.push(newPopup);
+        writeDb(db);
+
+        res.json({ success: true, ...newPopup });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
     }
 });
 
-// Chatbot Proxy (LM Studio / OpenAI Compatible)
+app.delete('/api/popups/:id', (req, res) => {
+    const db = readDb();
+    db.popups = db.popups.filter(p => p.id !== req.params.id);
+    writeDb(db);
+    res.json({ success: true });
+});
+
+
+// 3. SETTINGS
+app.get('/api/settings', (req, res) => {
+    const db = readDb();
+    res.json(db.settings);
+});
+
+app.post('/api/settings', (req, res) => {
+    const db = readDb();
+    const { popup_active } = req.body;
+    db.settings.popup_active = popup_active; // Stores boolean directly or string if passed
+    writeDb(db);
+    res.json({ success: true });
+});
+
+
+// 4. DOCUMENTS (Served from JSON now)
+app.get('/api/documents', (req, res) => {
+    const db = readDb();
+    res.json(db.documents);
+});
+
+app.post('/api/documents', upload.single('file'), (req, res) => {
+    // Simple mock implementation for adding doc to JSON
+    const { title, division, classification } = req.body;
+    const db = readDb();
+    const newDoc = {
+        id: Date.now().toString(),
+        title,
+        division,
+        classification,
+        type: 'SKD', // Default or logic
+        date: new Date().toISOString().split('T')[0],
+        fileUrl: req.file ? `http://localhost:${PORT}/uploads/${req.file.filename}` : '#',
+        isActive: true
+    };
+    db.documents.push(newDoc);
+    writeDb(db);
+    res.json({ success: true });
+});
+
+app.post('/api/documents/toggle', (req, res) => {
+    const { id, is_active } = req.body;
+    const db = readDb();
+    const doc = db.documents.find(d => d.id === String(id));
+    if (doc) {
+        doc.isActive = is_active;
+        writeDb(db);
+        res.json({ success: true });
+    } else {
+        res.status(404).json({ error: "Not found" });
+    }
+});
+
+
+// 5. LOGIN (Mock - removed DB)
+app.post('/api/login', (req, res) => {
+    // Determine admin status based on credentials (simple mock)
+    // Accept ANY login for now, but NIK 'admin' gets admin role
+    const { nik } = req.body;
+    const role = nik === 'admin' ? 'Admin' : 'User';
+
+    res.json({
+        message: 'Login successful (Local Mode)',
+        token: 'mock-token-' + Date.now(),
+        user: { nik, role, id: nik }
+    });
+});
+
+
+// 6. CHATBOT (LM Studio Proxy)
 const LM_STUDIO_API_BASE = 'http://127.0.0.1:1234/v1';
 
 app.post('/api/chat', async (req, res) => {
     const { message } = req.body;
     try {
-        // 1. Fetch available models to get the correct ID
-        const modelsResponse = await axios.get(`${LM_STUDIO_API_BASE}/models`);
-        const activeModel = modelsResponse.data.data[0]?.id || "local-model";
-
-        // 2. Find relevant context from PDFs
-        const context = findRelevantContext(message);
-
-        // 3. Send chat request with context
+        // Simple proxy to LM Studio
         const response = await axios.post(`${LM_STUDIO_API_BASE}/chat/completions`, {
-            model: activeModel,
+            model: "local-model",
             messages: [
-                {
-                    role: "system",
-                    content: `You are Bila, a helpful, intelligent, and friendly AI assistant for the BLINK employees. You answer in Bahasa Indonesia. 
-                    Use the following retrieved context to answer the user's question if relevant. If the context is not relevant, answer normally.
-                    
-                    ### CONTEXT FROM DOCUMENTS:
-                    ${context || "No relevant documents found for this query."}
-                    
-                    Always stay professional and terse.`
-                },
+                { role: "system", content: "You are a helpful assistant. Answer in Bahasa Indonesia." },
                 { role: "user", content: message }
             ],
             temperature: 0.7
         });
-
-        let reply = response.data.choices[0].message.content;
-
-        // Remove <think>...</think> blocks (common in reasoning models like DeepSeek R1)
-        reply = reply.replace(/<think>[\s\S]*?<\/think>/gi, '');
-
-        // Also remove any stray closing </think> tags and everything before them if the opening tag was missed/streamed out
-        // valid response usually follows the LAST closing tag if multiple exist
-        if (reply.includes('</think>')) {
-            const lastCloseIndex = reply.lastIndexOf('</think>');
-            if (lastCloseIndex !== -1) {
-                reply = reply.substring(lastCloseIndex + 8);
-            }
-        }
-
-        reply = reply.trim();
-
-        res.json({ reply: reply });
+        res.json({ reply: response.data.choices[0].message.content });
     } catch (error) {
-        console.error('LM Studio Error:', error.message);
-        if (error.response) {
-            console.error('Data:', error.response.data);
-        }
-        res.status(503).json({ error: 'Failed to get response from AI (LM Studio). Ensure it is running on port 1234.' });
+        console.error("Chatbot Error:", error.message);
+        res.status(503).json({ error: "LM Studio unavailable. Is it running on port 1234?" });
     }
 });
 
-// Banner Endpoint
-app.get('/api/banner', (req, res) => {
-    // Mock Banner Data
-    res.json([
-        {
-            id: '1',
-            title: "Net Zero Emissions 2060",
-            description: "Challenge yourself to take action for a cleaner future.",
-            image_path: "https://picsum.photos/seed/business/1200/600"
-        },
-        {
-            id: '2',
-            title: "Digital Transformation",
-            description: "Embracing technology to drive efficiency.",
-            image_path: "https://picsum.photos/seed/tech/1200/600"
-        },
-        {
-            id: '3',
-            title: "Safety First",
-            description: "Prioritizing safety in every operation.",
-            image_path: "https://picsum.photos/seed/safety/1200/600"
-        }
-    ]);
-});
 
-app.listen(PORT, async () => {
-    console.log('Server running on http://localhost:' + PORT);
-    await loadPDFs();
+app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Data Storage: ${dbFile}`);
+    console.log(`Uploads: ${uploadDir}`);
 });
