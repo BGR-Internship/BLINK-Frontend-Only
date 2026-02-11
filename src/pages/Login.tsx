@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import logo from '../assets/BGR_logo.png';
 
 // Reverted to localhost because lhr.life is blocked by FortiGuard
-const API_URL = "http://localhost:5000";
+const API_URL = "https://lindsay-unreviewable-nannette.ngrok-free.dev";
 
 const Login = () => {
     const navigate = useNavigate();

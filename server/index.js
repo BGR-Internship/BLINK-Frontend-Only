@@ -1,15 +1,19 @@
-const express = require('express');
-const cors = require('cors');
-const axios = require('axios');
-const fs = require('fs');
-const path = require('path');
-const multer = require('multer');
-const pdf = require('pdf-parse'); // Kept for RAG (future use)
+import express from 'express';
+import cors from 'cors';
+import fs from 'fs';
+import path from 'path';
+import multer from 'multer';
+import { fileURLToPath } from 'url';
+import bcrypt from 'bcryptjs'; // For checking real passwords
+import pool from './db.js';    // Import our new database connection
 
 const app = express();
-const PORT = 3000; // Changed to 3000 as requested
+const PORT = process.env.PORT || 3000;
 
 // --- FOLDER SETUP ---
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const uploadDir = path.join(__dirname, 'uploads');
 const dataDir = path.join(__dirname, 'data');
 const dbFile = path.join(dataDir, 'db.json');
@@ -17,26 +21,23 @@ const dbFile = path.join(dataDir, 'db.json');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir);
 
-// Initialize JSON DB if not exists
+// Initialize JSON DB (For Banners/Popups only - since they aren't in Siska DB)
 if (!fs.existsSync(dbFile)) {
     const initialData = {
         banners: [],
         popups: [],
         settings: { popup_active: true },
-        documents: [
-            { id: '1', title: 'Q1 Financial Report', type: 'SKD', division: 'Finance', classification: 'Private', date: '2024-03-01', fileUrl: '#', isActive: true },
-            { id: '2', title: 'Employee Handbook 2024', type: 'SOP', division: 'HR', classification: 'Public', date: '2024-01-15', fileUrl: '#', isActive: true },
-        ]
+        documents: []
     };
     fs.writeFileSync(dbFile, JSON.stringify(initialData, null, 2));
 }
 
 // --- HELPERS ---
-function readDb() {
+function readJsonDb() {
     return JSON.parse(fs.readFileSync(dbFile, 'utf8'));
 }
 
-function writeDb(data) {
+function writeJsonDb(data) {
     fs.writeFileSync(dbFile, JSON.stringify(data, null, 2));
 }
 
@@ -56,12 +57,73 @@ app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static(uploadDir));
 
+// ==========================================
+// 🚀 REAL DATABASE ROUTES (LOGIN)
+// ==========================================
 
-// --- API ROUTES ---
+app.post('/login', async (req, res) => {
+    const { nik, password } = req.body;
 
-// 1. BANNER CRUD
+    console.log(`🔐 Login attempt for NIK: ${nik}`);
+
+    try {
+        // 1. Check if user exists in tbl_user
+        const [rows] = await pool.query('SELECT * FROM tbl_user WHERE nik = ?', [nik]);
+
+        if (rows.length === 0) {
+            console.log("❌ User not found");
+            return res.status(404).json({ message: "User tidak ditemukan" });
+        }
+
+        const user = rows[0];
+
+        // 2. Check Password (using bcrypt because your DB passwords start with $2y$)
+        // If the DB password is NOT hashed (plain text), this will fail, so we handle both.
+        let isMatch = false;
+        
+        if (user.user_pass && user.user_pass.startsWith('$2')) {
+            // It is hashed
+            isMatch = await bcrypt.compare(password, user.user_pass);
+        } else {
+            // Fallback for plain text (just in case)
+            isMatch = (password === user.user_pass);
+        }
+
+        if (!isMatch) {
+            console.log("❌ Wrong password");
+            return res.status(401).json({ message: "Password salah" });
+        }
+
+        // 3. Login Success
+        console.log("✅ Login Success:", user.id_user);
+        
+        // Return data matching your frontend expectations
+        // We map 'id_user' to 'name' or similar for display purposes
+        res.json({
+            message: 'Login successful',
+            token: 'fake-jwt-token-' + Date.now(), // We can add real JWT later
+            user: {
+                id: user.id_user,
+                nik: user.nik,
+                role: user.id_usr_role === 1 ? 'super_admin' : (user.id_usr_role === 2 ? 'user' : 'admin'), // Mapping role ID
+                division: 'General' // You can fetch this from other tables if needed
+            }
+        });
+
+    } catch (error) {
+        console.error("🔥 Database Error:", error);
+        res.status(500).json({ message: "Database connection failed" });
+    }
+});
+
+
+// ==========================================
+// 📂 JSON DB ROUTES (CMS CONTENT)
+// ==========================================
+
+// 1. BANNER
 app.get('/api/banner', (req, res) => {
-    const db = readDb();
+    const db = readJsonDb();
     res.json(db.banners);
 });
 
@@ -72,10 +134,7 @@ app.post('/api/banner', upload.single('image'), (req, res) => {
         if (req.file) {
             finalImagePath = `http://localhost:${PORT}/uploads/${req.file.filename}`;
         }
-
-        if (!finalImagePath) return res.status(400).json({ error: "Image required" });
-
-        const db = readDb();
+        const db = readJsonDb();
         const newBanner = {
             id: Date.now().toString(),
             title: title || '',
@@ -83,10 +142,8 @@ app.post('/api/banner', upload.single('image'), (req, res) => {
             image_path: finalImagePath,
             created_at: new Date().toISOString()
         };
-
         db.banners.push(newBanner);
-        writeDb(db);
-
+        writeJsonDb(db);
         res.json({ success: true, ...newBanner });
     } catch (e) {
         res.status(500).json({ error: e.message });
@@ -94,20 +151,17 @@ app.post('/api/banner', upload.single('image'), (req, res) => {
 });
 
 app.delete('/api/banner/:id', (req, res) => {
-    const db = readDb();
+    const db = readJsonDb();
     const initialLen = db.banners.length;
     db.banners = db.banners.filter(b => b.id !== req.params.id);
-
     if (db.banners.length === initialLen) return res.status(404).json({ error: "Not found" });
-
-    writeDb(db);
+    writeJsonDb(db);
     res.json({ success: true });
 });
 
-
-// 2. POPUPS CRUD
+// 2. POPUPS
 app.get('/api/popups', (req, res) => {
-    const db = readDb();
+    const db = readJsonDb();
     res.json(db.popups);
 });
 
@@ -118,19 +172,14 @@ app.post('/api/popups', upload.single('image'), (req, res) => {
         if (req.file) {
             finalImagePath = `http://localhost:${PORT}/uploads/${req.file.filename}`;
         }
-
-        if (!finalImagePath) return res.status(400).json({ error: "Image required" });
-
-        const db = readDb();
+        const db = readJsonDb();
         const newPopup = {
             id: Date.now().toString(),
             image_path: finalImagePath,
             created_at: new Date().toISOString()
         };
-
         db.popups.push(newPopup);
-        writeDb(db);
-
+        writeJsonDb(db);
         res.json({ success: true, ...newPopup });
     } catch (e) {
         res.status(500).json({ error: e.message });
@@ -138,107 +187,50 @@ app.post('/api/popups', upload.single('image'), (req, res) => {
 });
 
 app.delete('/api/popups/:id', (req, res) => {
-    const db = readDb();
+    const db = readJsonDb();
     db.popups = db.popups.filter(p => p.id !== req.params.id);
-    writeDb(db);
+    writeJsonDb(db);
     res.json({ success: true });
 });
 
-
 // 3. SETTINGS
 app.get('/api/settings', (req, res) => {
-    const db = readDb();
+    const db = readJsonDb();
     res.json(db.settings);
 });
 
 app.post('/api/settings', (req, res) => {
-    const db = readDb();
+    const db = readJsonDb();
     const { popup_active } = req.body;
-    db.settings.popup_active = popup_active; // Stores boolean directly or string if passed
-    writeDb(db);
+    db.settings.popup_active = popup_active;
+    writeJsonDb(db);
     res.json({ success: true });
 });
 
-
-// 4. DOCUMENTS (Served from JSON now)
+// 4. DOCUMENTS
 app.get('/api/documents', (req, res) => {
-    const db = readDb();
+    const db = readJsonDb();
     res.json(db.documents);
 });
 
 app.post('/api/documents', upload.single('file'), (req, res) => {
-    // Simple mock implementation for adding doc to JSON
     const { title, division, classification } = req.body;
-    const db = readDb();
+    const db = readJsonDb();
     const newDoc = {
         id: Date.now().toString(),
         title,
         division,
         classification,
-        type: 'SKD', // Default or logic
+        type: 'SKD',
         date: new Date().toISOString().split('T')[0],
         fileUrl: req.file ? `http://localhost:${PORT}/uploads/${req.file.filename}` : '#',
         isActive: true
     };
     db.documents.push(newDoc);
-    writeDb(db);
+    writeJsonDb(db);
     res.json({ success: true });
 });
 
-app.post('/api/documents/toggle', (req, res) => {
-    const { id, is_active } = req.body;
-    const db = readDb();
-    const doc = db.documents.find(d => d.id === String(id));
-    if (doc) {
-        doc.isActive = is_active;
-        writeDb(db);
-        res.json({ success: true });
-    } else {
-        res.status(404).json({ error: "Not found" });
-    }
-});
-
-
-// 5. LOGIN (Mock - removed DB)
-app.post('/api/login', (req, res) => {
-    // Determine admin status based on credentials (simple mock)
-    // Accept ANY login for now, but NIK 'admin' gets admin role
-    const { nik } = req.body;
-    const role = nik === 'admin' ? 'Admin' : 'User';
-
-    res.json({
-        message: 'Login successful (Local Mode)',
-        token: 'mock-token-' + Date.now(),
-        user: { nik, role, id: nik }
-    });
-});
-
-
-// 6. CHATBOT (LM Studio Proxy)
-const LM_STUDIO_API_BASE = 'http://127.0.0.1:1234/v1';
-
-app.post('/api/chat', async (req, res) => {
-    const { message } = req.body;
-    try {
-        // Simple proxy to LM Studio
-        const response = await axios.post(`${LM_STUDIO_API_BASE}/chat/completions`, {
-            model: "local-model",
-            messages: [
-                { role: "system", content: "You are a helpful assistant. Answer in Bahasa Indonesia." },
-                { role: "user", content: message }
-            ],
-            temperature: 0.7
-        });
-        res.json({ reply: response.data.choices[0].message.content });
-    } catch (error) {
-        console.error("Chatbot Error:", error.message);
-        res.status(503).json({ error: "LM Studio unavailable. Is it running on port 1234?" });
-    }
-});
-
-
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
-    console.log(`Data Storage: ${dbFile}`);
-    console.log(`Uploads: ${uploadDir}`);
 });

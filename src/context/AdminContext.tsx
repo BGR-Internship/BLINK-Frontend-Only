@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import defaultBanner from '../assets/banner.jpg';
 
 // --- BACKEND URL ---
-const API_URL = "http://localhost:3000";
+const API_URL = "https://lindsay-unreviewable-nannette.ngrok-free.dev";
 
 // Types
 export interface Banner {

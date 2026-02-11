@@ -45,3 +45,13 @@ env/
 # Duplicate Folders (Do Not Track)
 backend-ai/
 dashboard-portal/
+
+# Ignore my helper files
+extractor.py
+full_code.txt
+
+# Ignore system files
+.DS_Store
+
+# SECURITY: Ignore environment secrets
+.env
