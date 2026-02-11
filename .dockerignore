@@ -1,0 +1,12 @@
+node_modules
+dist
+.git
+.github
+
+# Ignore backend-ish stuff often found in monorepos or leftovers
+server/
+source_documents/
+
+# Logs
+npm-debug.log
+tsc_errors.txt
