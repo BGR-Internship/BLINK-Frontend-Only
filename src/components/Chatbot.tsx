@@ -14,7 +14,7 @@ interface Message {
 }
 
 // --- RUNPOD BACKEND URL ---
-const API_URL = "https://ui9oox4nr5tnfv-3000.proxy.runpod.net";
+const API_URL = "http://localhost:8000";
 
 const Chatbot = () => {
     const [isOpen, setIsOpen] = useState(false);
@@ -65,11 +65,11 @@ const Chatbot = () => {
         setIsLoading(true);
 
         try {
-            // Updated to use RunPod URL
-            const response = await fetch(`${API_URL}/api/chat`, {
+            const response = await fetch(`${API_URL}/chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
+                    user_id: 'guest-user',
                     message: newUserMessage.text,
                     division: "General"
                 }),
