@@ -19,6 +19,8 @@ const DocumentManager = () => {
     const [division, setDivision] = useState('Finance');
     const [docType, setDocType] = useState<'SKD' | 'SOP'>('SKD');
     const [classification, setClassification] = useState<'Public' | 'Private'>('Public');
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
     // Filter State
     const [filterDivision, setFilterDivision] = useState('All');
     const [filterType, setFilterType] = useState('All');
@@ -47,7 +49,7 @@ const DocumentManager = () => {
 
     const handleUpload = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!title) return;
+        if (!title || !selectedFile) return;
 
         addDocument({
             title,
@@ -55,9 +57,10 @@ const DocumentManager = () => {
             division,
             classification,
             fileUrl: '#',
-            isActive: true
+            isActive: true,
+            file: selectedFile
         });
-
+        
         // Reset
         setIsFormOpen(false);
         setShowSuccessModal(true);
@@ -67,6 +70,13 @@ const DocumentManager = () => {
         setDivision('Finance');
         setDocType('SKD');
         setClassification('Public');
+        setSelectedFile(null);
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            setSelectedFile(e.target.files[0]);
+        }
     };
 
     const handleDocTypeChange = (type: 'SKD' | 'SOP') => {
@@ -178,10 +188,35 @@ const DocumentManager = () => {
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Unggah Berkas</label>
-                                    <div className="border-2 border-dashed border-slate-200 dark:border-slate-600 rounded-xl p-4 flex flex-col items-center justify-center text-slate-400 hover:border-primary/50 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all cursor-pointer">
-                                        <Upload size={24} className="mb-2" />
-                                        <span className="text-sm">Klik untuk unggah PDF</span>
-                                    </div>
+                                    <input 
+                                        type="file" 
+                                        id="file-upload" 
+                                        className="hidden" 
+                                        accept=".pdf" 
+                                        onChange={handleFileChange} 
+                                    />
+                                    <label 
+                                        htmlFor="file-upload"
+                                        className={clsx(
+                                            "border-2 border-dashed rounded-xl p-4 flex flex-col items-center justify-center transition-all cursor-pointer",
+                                            selectedFile 
+                                                ? "border-primary bg-primary/5 text-primary" 
+                                                : "border-slate-200 dark:border-slate-600 text-slate-400 hover:border-primary/50 hover:bg-slate-50 dark:hover:bg-slate-800"
+                                        )}
+                                    >
+                                        {selectedFile ? (
+                                            <>
+                                                <CheckCircle size={24} className="mb-2" />
+                                                <span className="text-sm font-medium">{selectedFile.name}</span>
+                                                <span className="text-xs opacity-70">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Upload size={24} className="mb-2" />
+                                                <span className="text-sm">Klik untuk unggah PDF</span>
+                                            </>
+                                        )}
+                                    </label>
                                 </div>
                             </div>
 
