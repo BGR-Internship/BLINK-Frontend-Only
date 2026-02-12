@@ -52,8 +52,20 @@ const Login = () => {
 
             if (response.ok) {
                 console.log("✅ Login Success!");
+                
+                // UPDATED: Use Context Login
+                login({
+                    id: data.user.id || formData.nik,
+                    nik: data.user.nik || formData.nik,
+                    name: data.user.name,
+                    role: data.user.role,
+                    division: data.user.division
+                });
+                
+                // Keep token storage if strictly needed by old components, but Context handles user now
                 localStorage.setItem('blink_token', data.token);
-                localStorage.setItem('blink_user', JSON.stringify(data.user));
+                // localStorage.setItem('blink_user', JSON.stringify(data.user)); // Handled by context now
+                
                 navigate('/');
             } else {
                 console.warn("⚠️ Login Failed:", data.message);
@@ -70,8 +82,24 @@ const Login = () => {
     // --- DEMO LOGIN ---
     const { login } = useAuth();
 
-    const handleDemoLogin = (role: any) => {
-        login(role);
+    const handleDemoLogin = (role: string) => {
+        // 1. Create Mock User Payload
+        const mockUser = {
+            id: role === 'super_admin' ? '1001' : '2002',
+            nik: role === 'super_admin' ? '12345' : '67890',
+            name: role === 'super_admin' ? 'Super Admin' : 'Demo User',
+            role: role,
+            division: role === 'super_admin' ? 'IT' : 'General'
+        };
+
+        // 2. Set Context
+        login(mockUser);
+
+        // 3. Set Token manually so <ProtectedRoute> sees it immediately
+        // (This was missing, causing the route guard to kick you back to login)
+        localStorage.setItem('blink_token', 'demo-bypass-token');
+
+        // 4. Navigate
         navigate('/');
     };
 

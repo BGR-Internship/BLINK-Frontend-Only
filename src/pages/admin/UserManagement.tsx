@@ -3,34 +3,34 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Trash2, Edit2, Shield, Filter, CheckCircle2 } from 'lucide-react';
 import clsx from 'clsx';
-import { User, UserRole } from '../../context/AuthContext';
+import { User } from '../../context/AuthContext';
 import ConfirmModal from '../../components/ui/ConfirmModal';
 
-// Mock Data
+// Mock Data - Added required 'nik' field
 const MOCK_USERS: User[] = [
-    { id: '1', name: 'Super Admin', email: 'superadmin@blink.id', role: 'super_admin', division: 'IT Development' },
-    { id: '2', name: 'Admin User', email: 'admin@blink.id', role: 'admin', division: 'Human Capital' },
-    { id: '3', name: 'Regular User', email: 'user@blink.id', role: 'user', division: 'Logistics' },
-    { id: '4', name: 'Rafi Zandrapribumi', email: 'zandra@upnvyk.id', role: 'admin', division: 'Finance' },
-    { id: '5', name: 'Siti Aminah', email: 'siti@blink.id', role: 'admin', division: 'General Affair' },
+    { id: '1', nik: '12345', name: 'Super Admin', email: 'superadmin@blink.id', role: 'super_admin', division: 'IT Development' },
+    { id: '2', nik: '2001', name: 'Admin User', email: 'admin@blink.id', role: 'admin', division: 'Human Capital' },
+    { id: '3', nik: '3005', name: 'Regular User', email: 'user@blink.id', role: 'user', division: 'Logistics' },
+    { id: '4', nik: '4002', name: 'Rafi Zandrapribumi', email: 'zandra@upnvyk.id', role: 'admin', division: 'Finance' },
+    { id: '5', nik: '5001', name: 'Siti Aminah', email: 'siti@blink.id', role: 'admin', division: 'General Affair' },
 ];
 
-const RoleBadge = ({ role }: { role: UserRole }) => {
-    const styles = {
+const RoleBadge = ({ role }: { role: string }) => {
+    const styles: Record<string, string> = {
         super_admin: 'bg-indigo-100 text-indigo-700 border-indigo-200',
         admin: 'bg-emerald-100 text-emerald-700 border-emerald-200',
         user: 'bg-slate-100 text-slate-700 border-slate-200'
     };
 
-    const labels = {
+    const labels: Record<string, string> = {
         super_admin: 'Super Admin',
         admin: 'Admin',
         user: 'User'
     };
 
     return (
-        <span className={clsx("px-2.5 py-0.5 rounded-full text-xs font-medium border", styles[role])}>
-            {labels[role]}
+        <span className={clsx("px-2.5 py-0.5 rounded-full text-xs font-medium border", styles[role] || styles.user)}>
+            {labels[role] || role}
         </span>
     );
 };
@@ -38,12 +38,14 @@ const RoleBadge = ({ role }: { role: UserRole }) => {
 const UserManagement = () => {
     const [users, setUsers] = useState<User[]>(MOCK_USERS);
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedRole, setSelectedRole] = useState<UserRole | 'all'>('all');
+    const [selectedRole, setSelectedRole] = useState<string>('all');
     const [deleteId, setDeleteId] = useState<string | null>(null);
 
     const filteredUsers = users.filter(user => {
+        // Safe access to email since it's optional in User type
         const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            user.email.toLowerCase().includes(searchQuery.toLowerCase());
+            (user.email && user.email.toLowerCase().includes(searchQuery.toLowerCase()));
+        
         const matchesRole = selectedRole === 'all' || user.role === selectedRole;
         return matchesSearch && matchesRole;
     });
@@ -90,7 +92,7 @@ const UserManagement = () => {
                         <select
                             className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/20"
                             value={selectedRole}
-                            onChange={(e) => setSelectedRole(e.target.value as any)}
+                            onChange={(e) => setSelectedRole(e.target.value)}
                         >
                             <option value="all">Semua Peran</option>
                             <option value="super_admin">Super Admin</option>

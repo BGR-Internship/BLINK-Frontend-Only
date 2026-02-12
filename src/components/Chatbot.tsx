@@ -4,6 +4,7 @@ import { X, Send, Maximize2, Minimize2, Sparkles, MessageSquare } from 'lucide-r
 import ReactMarkdown from 'react-markdown';
 import clsx from 'clsx';
 import BilaLogo from '../assets/bila-ai.png';
+import { useAuth } from '../context/AuthContext'; // 1. Import this
 
 interface Message {
     id: string;
@@ -13,10 +14,13 @@ interface Message {
     timestamp: Date;
 }
 
-// --- RUNPOD BACKEND URL ---
+// --- LOCAL DOCKER URL ---
 const API_URL = "http://localhost:8000";
 
 const Chatbot = () => {
+    // 2. Get User from Context
+    const { user, isAuthenticated } = useAuth(); 
+    
     const [isOpen, setIsOpen] = useState(false);
     const [isMaximized, setIsMaximized] = useState(false);
     const [inputValue, setInputValue] = useState('');
@@ -53,6 +57,10 @@ const Chatbot = () => {
 
         if (!inputValue.trim() || isLoading) return;
 
+        // Use context user if available
+        const currentNik = isAuthenticated && user?.nik ? user.nik : "guest";
+        const currentDivision = isAuthenticated && user?.division ? user.division : "General";
+
         const newUserMessage: Message = {
             id: Date.now().toString(),
             text: inputValue,
@@ -69,9 +77,9 @@ const Chatbot = () => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    user_id: 'guest-user',
+                    user_id: currentNik,
                     message: newUserMessage.text,
-                    division: "General"
+                    division: currentDivision
                 }),
             });
 

@@ -2,19 +2,20 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
 
 // Define User Type
-export type UserRole = 'super_admin' | 'admin' | 'user';
+// export type UserRole = 'super_admin' | 'admin' | 'user'; // Deprecated
 
 export interface User {
     id: string;
+    nik: string; // Added NIK
     name: string;
-    email: string;
-    role: UserRole;
+    email?: string;
+    role: string; // Flexible string
     division?: string;
 }
 
 interface AuthContextType {
     user: User | null;
-    login: (role: UserRole) => void;
+    login: (userData: User) => void; // CHANGED: Expect full user object
     logout: () => void;
     isAuthenticated: boolean;
 }
@@ -28,18 +29,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return storedUser ? JSON.parse(storedUser) : null;
     });
 
-    const login = (role: UserRole) => {
-        // Mock Login Logic
-        const mockUser: User = {
-            id: '1',
-            name: role === 'super_admin' ? 'Super Admin' : role === 'admin' ? 'Admin User' : 'Regular User',
-            email: `${role}@blink.id`,
-            role: role,
-            division: 'IT Development'
-        };
-        setUser(mockUser);
-        localStorage.setItem('blink_user', JSON.stringify(mockUser));
-        localStorage.setItem('blink_token', 'mock-token-123');
+    const login = (userData: User) => {
+        setUser(userData);
+        localStorage.setItem('blink_user', JSON.stringify(userData));
+        // Token should be handled by caller or passed inuserData if needed, keeping simple for now
     };
 
     const logout = () => {
